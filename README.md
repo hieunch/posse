@@ -14,7 +14,7 @@ logging, drawing and statistics aggregating. Several well-known routing algorith
 of holes in literature are also implemented.
 
 Here is basically how the system works:
-![Alt text](images/system.png?raw=true "System architecture")
+![Alt text](images/system_architecture.png?raw=true "System architecture")
 
 **Implemented routing algorithms**:
 - byPassRouting and multipathRingsRouting, 2 default routing algorithm of Castalia
@@ -56,7 +56,7 @@ use a method in drawing APIs will yield the equivalent drawing on client's app a
 - Draw an circle arc from one point to another given radius and color
 
 Example of using drawing APIs:
-![Alt text](images/debug.png?raw=true "System architecture")
+![Alt text](images/debug_apis.png?raw=true "System architecture")
 
 **Using client**
 
