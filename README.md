@@ -1,8 +1,10 @@
 
-## WSN Toolbox
+## Posse
 A toolbox for developing, debugging and evaluating routing algorithms in wireless sensor networks, especially for those routing algorithms dealing with the presence of holes.
 
-**The toolbox consists of 3 parts**:
+## Components
+
+The system consists of 3 parts: 
 * Castalia (forked from [Castalia](https://github.com/boulis/Castalia/)) as a simulator for Wireless Sensor Networks. As described
 in the Castalia repo: "Castalia is a simulator for WSNs based on the OMNeT++ platform and can be used by researchers and developers who want to test their distributed algorithms and/or protocols in realistic wireless channel and radio models, with a realistic node behaviour especially relating to access of the radio".
 * A web app acts as a tool to facilitate the process of generating sensor networks, 
@@ -14,9 +16,9 @@ logging, drawing and statistics aggregating. Several well-known routing algorith
 of holes in literature are also implemented.
 
 Here is basically how the system works:
-![Alt text](images/system_architecture.png?raw=true "System architecture")
+![Alt text](images/system.png?raw=true "System architecture")
 
-**Implemented routing algorithms**:
+## Implemented routing algorithms
 - byPassRouting and multipathRingsRouting, 2 default routing algorithm of Castalia
 - greedyRouting - Greedy routing 
 - gpsrRouting - The famous Greedy Perimeter Stateless Routing ([GPSR](http://www.icir.org/bkarp/jobs/gpsr-mobicom2000.pdf)) propsed by Brad Karp and H. T. Kung
@@ -27,18 +29,16 @@ Here is basically how the system works:
 The source codes of all routing algorithms 
 are located in `Castalia/Castalia/src/node/communication/routing` directory.
 
-**Drawing and logging APIs in Castalia**
+## Drawing and logging APIs
 
 Belows are added APIs to Castalia to support drawing and debugging when developing new routing algorithms, 
 use a method in drawing APIs will yield the equivalent drawing on client's app after submitting and receiving simulation result.
 
 	void debugLine(Point, Point, string color);
-- Draw a line segment between two point with given color
-	
+  Draw a line segment between two point with given color
 	
 	void debugCircle(Point, double, string color);
-- Draw a circle with given center, radius and color
-	
+  Draw a circle with given center, radius and color
 	
 	void debugPoint(Point, string color);
 - Draw a point in a given location and color
