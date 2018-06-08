@@ -55,6 +55,21 @@ use a method in drawing APIs will yield the equivalent drawing on client's app a
 Example of using drawing APIs:
 ![Alt text](images/debug_apis.png?raw=true "System architecture")
 
-**Using client**
+## Using Client
+First step is to create a network
+![Alt text](images/demo1.png?raw=true "System architecture")
+
+There are two modes, one is the debug mode, in which we will send 
+simulation information and get the drawing and logging info (from drawing APIs above)
+from the algorithm we are developing and display on the screen.
+
+Specify pairs of source and destination. Since we're in debug mode, 
+each node will be sending only 1 packet
+![Alt text](images/demo2.png?raw=true "System architecture")
+Get the drawing info back and render
+![Alt text](images/demo3.png?raw=true "System architecture")
+
+
+## Installing
 
 

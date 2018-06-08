@@ -56,7 +56,7 @@ void GpsrRouting::fromApplicationLayer(cPacket * pkt, const char *destination){
   if (nextHop != -1) {
     dataPacket->setPreviousLocation(selfLocation); // previous is unspecified
     dataPacket->setPreviousId(self); // no previous node
-    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
     toMacLayer(dataPacket, nextHop);
     return;
   }
@@ -122,7 +122,7 @@ void GpsrRouting::processDataPacketFromMacLayer(GpsrPacket* pkt){
   if (nextHop != -1) {
     netPacket->setPreviousLocation(selfLocation);
     netPacket->setPreviousId(self);
-    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
     toMacLayer(netPacket, nextHop);
     return;
   }
