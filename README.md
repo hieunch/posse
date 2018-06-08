@@ -41,16 +41,16 @@ use a method in drawing APIs will yield the equivalent drawing on client's app a
   Draw a circle with given center, radius and color
 	
 	void debugPoint(Point, string color);
-- Draw a point in a given location and color
+  Draw a point in a given location and color
 	
 	void debugPolygon(vector<Point>, string color);
-- Draw a polygon given vertices and color
+  Draw a polygon given vertices and color
 
 	void debugPath(vector<Point>, string color);
-- Draw a geometric path given vertices and color
+  Draw a geometric path given vertices and color
 	
 	void debugArc(Point from, Point to, double radius, string color);
-- Draw an circle arc from one point to another given radius and color
+  Draw an circle arc from one point to another given radius and color
 
 Example of using drawing APIs:
 ![Alt text](images/debug_apis.png?raw=true "System architecture")
