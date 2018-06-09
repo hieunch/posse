@@ -12,6 +12,7 @@
 #include <map>
 #include <limits>
 #include <stack>
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <tuple>        // std::tuple, std::make_tuple, std::tie
