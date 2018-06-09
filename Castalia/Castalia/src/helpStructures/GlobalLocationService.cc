@@ -65,7 +65,7 @@ int GlobalLocationService::numHopShortestPath(int source, int destination) {
   }
 
 
-  spCache[{source, destination}] = d[destination];
+  spCache[make_tuple(source, destination)] = d[destination];
 
 
   return d[destination];
