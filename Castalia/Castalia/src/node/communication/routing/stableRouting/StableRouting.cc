@@ -587,7 +587,7 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   for (auto cavern: caverns) {
     if (G::pointInOrOnPolygon(cavern, from) && G::pointInOrOnPolygon(cavern, to)) {
       auto result = G::shortestPathInOrOnPolygon(cavern, from, to);
-      return {result, outCavernRadius, aroundHoleRadius, inCavernRadius};
+      return make_tuple(result, outCavernRadius, aroundHoleRadius, inCavernRadius);
     }
   }
 
