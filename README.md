@@ -31,8 +31,8 @@ are located in `Castalia/Castalia/src/node/communication/routing` directory.
 
 ## Drawing and logging APIs
 
-Belows are added APIs to Castalia to support drawing and debugging when developing new routing algorithms, 
-use a method in drawing APIs will yield the equivalent drawing on client's app after submitting and receiving simulation result.
+Belows are added APIs to Castalia to support drawing and debugging when developing new routing algorithms. 
+Using a method in drawing APIs will yield the equivalent drawing on client app after submitting and receiving simulation result.
 
 	void debugLine(Point, Point, string color);
   Draw a line segment between two point with given color
