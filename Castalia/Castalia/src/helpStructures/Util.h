@@ -7,6 +7,7 @@
 #include <sstream>
 #include "GeoMathHelper.h"
 #include "VirtualRouting.h"
+#include <iterator>
 #include "GlobalLocationService.h"
 using namespace std;
 
