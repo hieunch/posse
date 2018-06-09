@@ -300,7 +300,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       double outCavernRadius, aroundHoleRadius, inCavernRadius;
       tie(path, outCavernRadius, aroundHoleRadius, inCavernRadius) = findPath(selfLocation,
         destLocation, hole, caverns);
-      findPathCache[{selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius}] = path;
+      findPathCache[make_tuple(selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)] = path;
 //      debugPath(path, "black");
 //      for (auto p: path) {
 ////        debugPoint(p, "black");
@@ -378,9 +378,9 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       double aroundHoleRadius = pkt->getAroundHoleRadius();
       double inCavernRadius = pkt->getInCavernRadius();
 
-      if (findPathCache.find({startStableLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius})
+      if (findPathCache.find(make_tuple(startStableLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius))
         != findPathCache.end()) {
-        vector<Point> path = findPathCache[{startStableLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius}];
+        vector<Point> path = findPathCache[make_tuple(startStableLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)];
         int j = -1;
         for (int i = 0; i < path.size() - 1; i++) {
           if (path[i] == nextStoppingPlace) {
