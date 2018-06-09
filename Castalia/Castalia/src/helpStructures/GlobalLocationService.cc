@@ -40,8 +40,8 @@ Point GlobalLocationService::getLocation(int id) {
   return locations[id];
 }
 int GlobalLocationService::numHopShortestPath(int source, int destination) {
-  if (spCache.find({source, destination}) != spCache.end()) {
-    return spCache[{source, destination}];
+  if (spCache.find(make_tuple(source, destination)) != spCache.end()) {
+    return spCache[make_tuple(source, destination)];
   }
 
   vector<bool> marked;
