@@ -573,12 +573,12 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
 
   // strange case
   if (hole.empty()) {
-    return {{from, to}, outCavernRadius, aroundHoleRadius, inCavernRadius};
+    return make_tuple({from, to}, outCavernRadius, aroundHoleRadius, inCavernRadius);
   }
 
   // go straight
   if (G::outOrOnPolygon(hole, LineSegment(from, to))) {
-    return {{from, to}, outCavernRadius, aroundHoleRadius, inCavernRadius};
+    return make_tuple({from, to}, outCavernRadius, aroundHoleRadius, inCavernRadius);
   }
 
   // in the same cavern
