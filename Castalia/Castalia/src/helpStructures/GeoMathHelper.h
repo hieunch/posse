@@ -20,7 +20,6 @@
 #define g_min(x,y) (((x)<(y))?(x):(y))
 #define g_max(x,y) (((x)>(y))?(x):(y))
 #define in_range(x,a,y) ((x) <= (a) && (a) <= (y)) || ((x) >= (a) && (a) >= (y))
-#define INT_MAX 999999999
 
 #define EPSILON 0.0001
 #define INVALID -10000
