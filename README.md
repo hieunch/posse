@@ -59,17 +59,49 @@ Example of using drawing APIs:
 First step is to create a network
 ![Alt text](images/demo1.png?raw=true "System architecture")
 
-There are two modes, one is the debug mode, in which we will send 
+There are two modes, one is the **debug** mode, in which we will send 
 simulation information and get the drawing and logging info (from drawing APIs above)
 from the algorithm we are developing and display on the screen.
 
 Specify pairs of source and destination. Since we're in debug mode, 
-each node will be sending only 1 packet
+each node will be sending only 1 packet:
 ![Alt text](images/demo2.png?raw=true "System architecture")
-Get the drawing info back and render
+Get the drawing info back and render:
 ![Alt text](images/demo3.png?raw=true "System architecture")
 
+The other is **real** mode, in which we'll do experiments and evaluations with all
+of the implemented routing algorithms. In this mode, two regions of communication are selected.
+[10, 15, 20, 25, 30] communication sessions from A to B (source in A and destination in B) will be generated.
+The simulation scenario is those pairs of source and destination will constantly send and receive packets with the 
+rate of 4 KB/s (should be customizable later). The result of estimated network lifetime, stretch ratio, heatmap, etc. of 
+each routing algorithms under each network configuration is then displayed in client app.
 
+First step is to select region A and region B:
+![Alt text](images/demo4.png?raw=true "System architecture")
+
+Submit and get the result to compare between routing algorithms:
+![Alt text](images/demo5.png?raw=true "System architecture")
 ## Installing
 
+Prerequisites
+- Install [OMNeT++ 4.6](https://www.omnetpp.org/9-articles/software/3724-omnet-4-6-released)
+- Install Castalia (this modified Castalia on this repo) by following the instruction on the original [Castalia repo](https://github.com/boulis/Castalia/)
+- Install node.js and npm
+
+Castalia
+- Located in `Castalia/Castalia` directory
+- After adding new routing algorithm or modify source code: `$ ./makemake` then ` make ` to rebuild Castalia (only takes seconds)
+
+
+Client
+- Located in `/client` directory.
+- Install dependencies: `$ yarn`
+- Start the client: `$ yarn start`
+
+Server
+
+- Located in `/Castalia/Castalia/Simulations/server` directory
+- Install dependencies: `$ yarn`
+- Start the client: `$ yarn start`
+ 
 
