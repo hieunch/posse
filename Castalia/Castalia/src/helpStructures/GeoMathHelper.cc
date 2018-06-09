@@ -1050,5 +1050,5 @@ tuple<Point, Point> G::hash(vector<Point> vs) {
     ymax = max(ymax, p.y());
   }
 
-  return {Point(xmin, ymin), Point(xmax, ymax)};
+  return make_tuple(Point(xmin, ymin), Point(xmax, ymax));
 }
