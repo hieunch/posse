@@ -636,5 +636,5 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
 
   auto flattenResult = G::flatten(result);
 
-  return {flattenResult, outCavernRadius, aroundHoleRadius, inCavernRadius};
+  return make_tuple(flattenResult, outCavernRadius, aroundHoleRadius, inCavernRadius);
 }
