@@ -212,17 +212,22 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
     propagateHole(pkt);
   }
 
-//  if (self == 800) { debugPolygon(hole, "green");
-//  }
-//  if (self == 680) {
-//    Point from = GlobalLocationService::getLocation(680);
-//    Point to = GlobalLocationService::getLocation(923);
-//    debugPolygon(convexHull, "purple");
-//    auto balledPolygon = G::rollBallPolygon(convexHull, 70);
-//    debugPolygon(balledPolygon, "blue");
-//    debugPath(findPathAroundHole(from, to, hole, 70), "black");
-//
-//  }
+  if (self == 787) {
+//    auto cavern = caverns[1];
+    debugPolygon(hole, "#8d168f");
+    debugPolygon(convexHull, "#8d168f");
+//    G::rollBallCavern(cavern, 40);
+//    findPathOutCavern(
+//      GlobalLocationService::getLocation(801),
+//      GlobalLocationService::getLocation(466),
+//      hole, cavern, 40);
+//    findPathAroundHole(
+//       GlobalLocationService::getLocation(563),
+//       GlobalLocationService::getLocation(955),
+//       hole,
+//       50
+//    );
+  }
 
 }
 
@@ -295,6 +300,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
   Point destLocation = pkt->getDestLocation();
   if (pkt->getNextStoppingPlace().isUnspecified()) {
     if (receivedHole) {
+      log () << "receive hole ";
       // first time in
       vector<Point> path;
       double outCavernRadius, aroundHoleRadius, inCavernRadius;
@@ -303,7 +309,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       findPathCache[make_tuple(selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)] = path;
 //      debugPath(path, "black");
 //      for (auto p: path) {
-////        debugPoint(p, "black");
+//        debugPoint(p, "black");
 //      }
 
 //      for (auto p: path) debugPoint(p, "green");
@@ -330,7 +336,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           }
         }
         if (nextHop != -1) {
-          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
 
@@ -362,7 +368,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -411,7 +417,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           }
         }
         if (nextHop != -1) {
-          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -441,7 +447,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "red");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -477,7 +483,9 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
   }
 
   vector<Point> interiorCavern = G::rollBallCavern(cavern, ballRadius);
+//  debugPolygon(interiorCavern, "red");
   vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
+//  debugPath(shortestPath, "green");
 
   // gate
   Point M = cavern[0], N = cavern[cavern.size() - 1];
@@ -512,6 +520,9 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
 
   auto flattenResult = G::flatten(result);
   outCavernCache[make_tuple(cavernHash, from, to, ballRadius)] = flattenResult;
+
+//  debugPath(flattenResult, "black");
+//  for (auto p: flattenResult) debugPoint(p, "black");
 
   return flattenResult;
 }
@@ -562,10 +573,14 @@ vector<Point> StableRouting::findPathAroundHole(Point from, Point to, vector<Poi
   auto flattenResult = G::flatten(res);
   aroundHoleCache[make_tuple(from, to, ballRadius)] = flattenResult;
 
+//  debugPath(flattenResult, "black");
+//  for (auto p: flattenResult) debugPoint(p, "black");
+
   return flattenResult;
 }
 
 tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
+  log() << "ahihi hi";
   vector<Point> result;
   double inCavernRadius = -1;
   double outCavernRadius = -1;
@@ -591,8 +606,8 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
     }
   }
 
-  vector<Point> outCavern;
-  vector<Point> inCavern;
+  vector<Point> outCavern = {};
+  vector<Point> inCavern = {};
   Point newFrom = from, newTo = to;
 
   int pathNum = (rand() % NUM_PATH + 1);
@@ -624,11 +639,19 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   to = newTo;
 
 
-  double maxRadius = 10 * log2(holeDiameter);
+  double maxRadius = 5 * log2(holeDiameter);
   aroundHoleRadius = pathNum * (maxRadius / NUM_PATH);
   vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
 //  debugPolygon(G::rollBallPolygon(G::convexHull(hole), aroundHoleRadius), "purple");
 
+  debugPath(middlePath, "green");
+  debugPath(inCavern, "blue");
+  if (outCavern.size() > 0) {
+    debugPath(outCavern, "red");
+    for (auto p: outCavern) debugPoint(p, "red");
+  }
+  for (auto p: middlePath) debugPoint(p, "green");
+  for (auto p: inCavern) debugPoint(p, "blue");
 
   result.insert(result.end(), outCavern.begin(), outCavern.end());
   result.insert(result.end(), middlePath.begin(), middlePath.end());

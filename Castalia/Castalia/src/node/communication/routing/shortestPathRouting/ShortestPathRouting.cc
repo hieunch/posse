@@ -301,7 +301,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -332,7 +332,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -372,7 +372,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -402,7 +402,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }
         }

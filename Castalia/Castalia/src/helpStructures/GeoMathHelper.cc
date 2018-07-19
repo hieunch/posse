@@ -690,6 +690,9 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
   // MN is the gate
   Vector MN(points[0], points[points.size() - 1]);
   Point X1 = points[0] + MN.rotate(M_PI / 2) * (r / MN.length());
+
+//  debugCircle(X1, r, "black");
+//  debugPoint(X1, "black");
   Point X2 = points[0] + MN.rotate(- M_PI / 2) * (r / MN.length());
   parts.push_back(Either(DirectedArc(X1, X2, points[0], r)));
 
@@ -800,17 +803,19 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
     currentId = nextId;
   }
   Point J = points[points.size() - 1] + MN.rotate(M_PI / 2) * (r / MN.length());
+//  debugPoint(J, "black");
+//  debugCircle(J, r, "black");
 //  debugArc(trajectory[trajectory.size() - 1], J, r, "green");
   trajectory.push_back(J);
 //  debugPolygon(trajectory, "red");
 
 //  for (auto p: trajectory) {
-////    int random = rand() % 15;
-////    if (random <= 1) {
-////      debugPoint(p, "green");
-////      debugCircle(p, r, "gray");
-////    }
-//    debugPoint(p, "green");
+//    int random = rand() % 15;
+//    if (random <= 1) {
+//      debugPoint(p, "black");
+//      debugCircle(p, r, "black");
+//    }
+////    debugPoint(p, "green");
 //  }
 
 //  debugCircle(trajectory[0], r, "green");
@@ -918,6 +923,17 @@ vector<Point> G::rollBallPolygon(vector<Point> points, double r) {
     current = next;
     currentId = nextId;
   }
+
+//  for (auto p: trajectory) {
+//    int random = rand() % 15;
+//    if (random <= 0) {
+//      debugPoint(p, "black");
+//      debugCircle(p, r, "black");
+//    }
+////    debugPoint(p, "green");
+//  }
+
+//  debugPolygon(trajectory, "green");
 
 //  debugCircle(trajectory[0], r, "purple");
 
