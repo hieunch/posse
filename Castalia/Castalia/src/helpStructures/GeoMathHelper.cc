@@ -1058,7 +1058,7 @@ double G::diameter(vector<Point> polygon) {
 
 
 tuple<Point, Point> G::hash(vector<Point> vs) {
-  double xmin = INT_MAX, ymin = INT_MAX, xmax = -1, ymax = -1;
+  double xmin = 1e9, ymin = 1e9, xmax = -1, ymax = -1;
   for (auto p: vs) {
     xmin = min(xmin, p.x());
     ymin = min(ymin, p.y());
