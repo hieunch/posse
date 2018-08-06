@@ -280,7 +280,7 @@ vector<Point> G::shortestPathInOrOnPolygon(vector<Point> vs, Point source, Point
   double d[V + 2];
   d[0] = 0;
   for (int i = 1; i < V; i++) {
-    d[i] = INT_MAX;
+    d[i] = 1e9;
   }
 
   std::set<pair<double, int> > st;
@@ -334,7 +334,7 @@ vector<Point> G::shortestPathOutOrOnPolygon(vector<Point> vs, Point source, Poin
   double d[V + 2];
   d[0] = 0;
   for (int i = 1; i < V; i++) {
-    d[i] = INT_MAX;
+    d[i] = 1e9;
   }
 
   std::set<pair<double, int> > st;
@@ -723,7 +723,7 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
   while (currentId < parts.size()) {
     Either next;
     bool foundNext = false;
-    double minDistance = INT_MAX;
+    double minDistance = 1e9;
 
     if (current.isSegment) {
       DirectedSegment currentSegment = current.directedSegment;
@@ -849,7 +849,7 @@ vector<Point> G::rollBallPolygon(vector<Point> points, double r) {
   while (currentId < parts.size()) {
     Either next;
     bool foundNext = false;
-    double minDistance = INT_MAX;
+    double minDistance = 1e9;
 
     if (current.isSegment) {
       DirectedSegment currentSegment = current.directedSegment;
@@ -966,7 +966,7 @@ Point G::closestPointOnSegment(LineSegment ls, Point p) {
   return Point(lx, ly);
 }
 Point G::closestPointOnPolygon(vector<Point> vs, Point p) {
-  double minDis = INT_MAX;
+  double minDis = 1e9;
   Point res;
   for (int i = 0; i < vs.size(); i++) {
     Point A = vs[i];
@@ -982,7 +982,7 @@ Point G::closestPointOnPolygon(vector<Point> vs, Point p) {
   return res;
 }
 double G::distanceToPolygon(vector<Point> vs, Point p) {
-  double minDis = INT_MAX;
+  double minDis = 1e9;
   for (int i = 0; i < vs.size(); i++) {
     Point A = vs[i];
     Point B = vs[(i + 1) % vs.size()];
