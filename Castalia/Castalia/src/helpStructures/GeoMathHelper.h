@@ -12,6 +12,7 @@
 #include <map>
 #include <limits>
 #include <stack>
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <tuple>        // std::tuple, std::make_tuple, std::tie
@@ -22,6 +23,7 @@
 
 #define EPSILON 0.0001
 #define INVALID -10000
+#define M_PI 3.141592653
 
 #ifndef NaN
 #define NaN std::numeric_limits<double>::quiet_NaN()

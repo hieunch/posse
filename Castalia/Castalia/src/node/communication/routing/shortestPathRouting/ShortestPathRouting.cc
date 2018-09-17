@@ -301,7 +301,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -332,7 +332,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -372,7 +372,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -402,7 +402,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -429,11 +429,11 @@ void ShortestPathRouting::handleNetworkControlCommand(cMessage *msg) {
 
 
 vector<Point> ShortestPathRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
-  if (shortestPathCache.find({from, to}) != shortestPathCache.end()) {
-    return shortestPathCache[{from, to}];
+  if (shortestPathCache.find(make_tuple(from, to)) != shortestPathCache.end()) {
+    return shortestPathCache[make_tuple(from, to)];
   }
   vector<Point> result = G::shortestPathOutOrOnPolygon(hole, from, to);
-  shortestPathCache[{from, to}] = result;
+  shortestPathCache[make_tuple(from, to)] = result;
 
   return result;
 }

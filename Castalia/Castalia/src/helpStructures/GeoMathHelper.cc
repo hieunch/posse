@@ -280,7 +280,7 @@ vector<Point> G::shortestPathInOrOnPolygon(vector<Point> vs, Point source, Point
   double d[V + 2];
   d[0] = 0;
   for (int i = 1; i < V; i++) {
-    d[i] = INT_MAX;
+    d[i] = 1e9;
   }
 
   std::set<pair<double, int> > st;
@@ -334,7 +334,7 @@ vector<Point> G::shortestPathOutOrOnPolygon(vector<Point> vs, Point source, Poin
   double d[V + 2];
   d[0] = 0;
   for (int i = 1; i < V; i++) {
-    d[i] = INT_MAX;
+    d[i] = 1e9;
   }
 
   std::set<pair<double, int> > st;
@@ -690,6 +690,9 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
   // MN is the gate
   Vector MN(points[0], points[points.size() - 1]);
   Point X1 = points[0] + MN.rotate(M_PI / 2) * (r / MN.length());
+
+//  debugCircle(X1, r, "black");
+//  debugPoint(X1, "black");
   Point X2 = points[0] + MN.rotate(- M_PI / 2) * (r / MN.length());
   parts.push_back(Either(DirectedArc(X1, X2, points[0], r)));
 
@@ -720,7 +723,7 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
   while (currentId < parts.size()) {
     Either next;
     bool foundNext = false;
-    double minDistance = INT_MAX;
+    double minDistance = 1e9;
 
     if (current.isSegment) {
       DirectedSegment currentSegment = current.directedSegment;
@@ -800,17 +803,19 @@ vector<Point> G::rollBallCavern(vector<Point> points, double r) {
     currentId = nextId;
   }
   Point J = points[points.size() - 1] + MN.rotate(M_PI / 2) * (r / MN.length());
+//  debugPoint(J, "black");
+//  debugCircle(J, r, "black");
 //  debugArc(trajectory[trajectory.size() - 1], J, r, "green");
   trajectory.push_back(J);
 //  debugPolygon(trajectory, "red");
 
 //  for (auto p: trajectory) {
-////    int random = rand() % 15;
-////    if (random <= 1) {
-////      debugPoint(p, "green");
-////      debugCircle(p, r, "gray");
-////    }
-//    debugPoint(p, "green");
+//    int random = rand() % 15;
+//    if (random <= 1) {
+//      debugPoint(p, "black");
+//      debugCircle(p, r, "black");
+//    }
+////    debugPoint(p, "green");
 //  }
 
 //  debugCircle(trajectory[0], r, "green");
@@ -844,7 +849,7 @@ vector<Point> G::rollBallPolygon(vector<Point> points, double r) {
   while (currentId < parts.size()) {
     Either next;
     bool foundNext = false;
-    double minDistance = INT_MAX;
+    double minDistance = 1e9;
 
     if (current.isSegment) {
       DirectedSegment currentSegment = current.directedSegment;
@@ -919,6 +924,17 @@ vector<Point> G::rollBallPolygon(vector<Point> points, double r) {
     currentId = nextId;
   }
 
+//  for (auto p: trajectory) {
+//    int random = rand() % 15;
+//    if (random <= 0) {
+//      debugPoint(p, "black");
+//      debugCircle(p, r, "black");
+//    }
+////    debugPoint(p, "green");
+//  }
+
+//  debugPolygon(trajectory, "green");
+
 //  debugCircle(trajectory[0], r, "purple");
 
   return trajectory;
@@ -950,7 +966,7 @@ Point G::closestPointOnSegment(LineSegment ls, Point p) {
   return Point(lx, ly);
 }
 Point G::closestPointOnPolygon(vector<Point> vs, Point p) {
-  double minDis = INT_MAX;
+  double minDis = 1e9;
   Point res;
   for (int i = 0; i < vs.size(); i++) {
     Point A = vs[i];
@@ -966,7 +982,7 @@ Point G::closestPointOnPolygon(vector<Point> vs, Point p) {
   return res;
 }
 double G::distanceToPolygon(vector<Point> vs, Point p) {
-  double minDis = INT_MAX;
+  double minDis = 1e9;
   for (int i = 0; i < vs.size(); i++) {
     Point A = vs[i];
     Point B = vs[(i + 1) % vs.size()];
@@ -1042,7 +1058,7 @@ double G::diameter(vector<Point> polygon) {
 
 
 tuple<Point, Point> G::hash(vector<Point> vs) {
-  double xmin = INT_MAX, ymin = INT_MAX, xmax = -1, ymax = -1;
+  double xmin = 1e9, ymin = 1e9, xmax = -1, ymax = -1;
   for (auto p: vs) {
     xmin = min(xmin, p.x());
     ymin = min(ymin, p.y());
@@ -1050,5 +1066,5 @@ tuple<Point, Point> G::hash(vector<Point> vs) {
     ymax = max(ymax, p.y());
   }
 
-  return {Point(xmin, ymin), Point(xmax, ymax)};
+  return make_tuple(Point(xmin, ymin), Point(xmax, ymax));
 }

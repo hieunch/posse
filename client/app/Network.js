@@ -145,7 +145,7 @@ class Network {
       node.circle = this.nodeLayer
         .circle(NODE_CIRCLE_RADIUS * 2)
         .center(node.x, node.y)
-        .fill('#626262');
+        .fill('#b7b7b7');
       node.circle.click(() => {
         console.log(node);
       })

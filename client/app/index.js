@@ -137,8 +137,8 @@ function init({nodes, width, height, range}) {
         network.drawPoint({x, y, color});
       } else if (shape.type === 'line') {
         let {x1, y1, x2, y2, color} = shape;
-        // network.drawLine({x1, y1, x2, y2, style: {color, width: '0.5'}})
-        network.drawArrow(({from: {x: x1, y: y1}, to: {x: x2, y: y2}, style: {color, width: '1'}}))
+        network.drawLine({x1, y1, x2, y2, style: {color, width: '0.5'}})
+        // network.drawArrow(({from: {x: x1, y: y1}, to: {x: x2, y: y2}, style: {color, width: '1'}}))
       } else if (shape.type === 'arc') {
         let {fromX, fromY, toX, toY, radius, color} = shape;
         network.drawArc({from: {x: fromX, y: fromY}, to: {x: toX, y: toY}, radius, style: {width: '0.5', color}})
