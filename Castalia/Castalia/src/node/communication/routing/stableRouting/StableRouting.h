@@ -64,9 +64,6 @@ class StableRouting: public VirtualRouting {
     void processHole(DiscoverHolePacket*);
     void propagateHole(DiscoverHolePacket*);
 
-    void processPacketFirstTimeHaveHoleInfo(StablePacket*);
-    void forwardToNextStoppingPlace(StablePacket*);
-
     Point getNeighborLocation(int);
     Point nearestCenter(Point pivot, Point next, Point center);
 
