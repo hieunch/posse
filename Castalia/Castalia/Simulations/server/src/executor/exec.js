@@ -78,6 +78,8 @@ function exec({config, sessionId}) {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "StableRouting"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'shortestpath') {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "ShortestPathRouting"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'kmlp') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "MlpRouting"\n`)
       } else {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "GpsrRouting"\n`)
       }
