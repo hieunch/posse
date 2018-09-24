@@ -57,6 +57,7 @@ class MlpRouting: public VirtualRouting {
     void processDiscoverHolePacket(DiscoverHolePacket*);
     void processHole(DiscoverHolePacket*);
     void propagateHole(DiscoverHolePacket*);
+    vector<Point> findPathOutCavern(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, double k);
 };
 
 #endif				//MLPROUTINGMODULE

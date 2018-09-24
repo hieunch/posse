@@ -213,20 +213,14 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
   }
 
   if (self == 787) {
-//    auto cavern = caverns[1];
     debugPolygon(hole, "#8d168f");
     debugPolygon(convexHull, "#8d168f");
-//    G::rollBallCavern(cavern, 40);
-//    findPathOutCavern(
-//      GlobalLocationService::getLocation(801),
-//      GlobalLocationService::getLocation(466),
-//      hole, cavern, 40);
-//    findPathAroundHole(
-//       GlobalLocationService::getLocation(563),
-//       GlobalLocationService::getLocation(955),
-//       hole,
-//       50
-//    );
+    findPathOutCavern(GlobalLocationService::getLocation(635),
+     GlobalLocationService::getLocation(1692), hole, caverns[0], 10);
+    findPathOutCavern(GlobalLocationService::getLocation(635),
+     GlobalLocationService::getLocation(1692), hole, caverns[0], 20);
+    findPathOutCavern(GlobalLocationService::getLocation(635),
+     GlobalLocationService::getLocation(1692), hole, caverns[0], 30);
   }
 
 }
@@ -483,9 +477,7 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
   }
 
   vector<Point> interiorCavern = G::rollBallCavern(cavern, ballRadius);
-//  debugPolygon(interiorCavern, "red");
   vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
-//  debugPath(shortestPath, "green");
 
   // gate
   Point M = cavern[0], N = cavern[cavern.size() - 1];
@@ -516,13 +508,13 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
   }
 
   vector<Point> spInterior = G::shortestPathInOrOnPolygon(interiorCavern, from, T);
+  debugPath(spInterior, "red");
+
   for (auto p: spInterior) result.push_back(p);
 
   auto flattenResult = G::flatten(result);
   outCavernCache[make_tuple(cavernHash, from, to, ballRadius)] = flattenResult;
 
-//  debugPath(flattenResult, "black");
-//  for (auto p: flattenResult) debugPoint(p, "black");
 
   return flattenResult;
 }

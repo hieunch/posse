@@ -96,6 +96,7 @@ void MlpRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double
   }
 
 
+
   MlpPacket *netPacket = dynamic_cast <MlpPacket*>(pkt);
   if (!netPacket)
     return;
@@ -131,6 +132,7 @@ void MlpRouting::finishSpecific() {
 }
 
 void MlpRouting::processHole(DiscoverHolePacket* pkt) {
+
 
   Point ballCenter = pkt->getBallCenter();
   string pathString(pkt->getPath());
@@ -196,7 +198,10 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
 
   if (self == 787) {
     debugPolygon(hole, "#8d168f");
-    debugPolygon(convexHull, "#8d168f");
+//    debugPolygon(convexHull, "#8d168f");
+
+    findPathOutCavern(GlobalLocationService::getLocation(635),
+     GlobalLocationService::getLocation(1692), hole, caverns[0], 40);
   }
 
 }
@@ -275,4 +280,56 @@ void MlpRouting::handleNetworkControlCommand(cMessage *msg) {
 }
 
 
+vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> &hole,
+                                vector<Point> &cavern, double k) {
 
+
+  vector<Point> interiorCavern = G::rollBallCavern(cavern, k);
+  vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
+
+  // gate
+  Point M = cavern[0], N = cavern[cavern.size() - 1];
+  Point I;
+  LineSegment MN(M, N);
+  for (int i = 0; i < shortestPath.size() - 1; i++) {
+    Point X = shortestPath[i], Y = shortestPath[i + 1];
+    LineSegment XY(X, Y);
+    if (G::doIntersect(XY, MN)) {
+      I = G::intersection(XY, MN);
+      break;
+    }
+  }
+
+  if (I.isUnspecified()) return vector<Point>(); // not gonna happen
+  vector<Point> result;
+
+  Point T = I + Vector(M, N).rotate(M_PI / 2) * (k / Vector(M, N).length());
+  if (!G::pointInOrOnPolygon(interiorCavern, from)) {
+    double minDistance = INT_MAX;
+    Point closest = G::closestPointOnPolygon(interiorCavern, from);
+    vector<Point> shortestPathToClosest = G::shortestPathOutOrOnPolygon(hole, from, closest);
+    for (int i = 0; i < shortestPathToClosest.size() - 1; i++) {
+      result.push_back(shortestPathToClosest[i]);
+    }
+
+    from = closest;
+  }
+
+  // from to T
+  vector<Point> spInterior = G::shortestPathInOrOnPolygon(interiorCavern, from, T);
+
+  // main road
+  vector<Point> mainRoad(result.begin(), result.end());
+  for (auto p: spInterior) mainRoad.push_back(p);
+
+//  debugPath(spInterior, "green");
+  debugPath(G::translate(spInterior, -30), "red");
+  debugPath(G::translate(spInterior, -20), "red");
+  debugPath(G::translate(spInterior, -10), "red");
+
+  return {};
+
+//
+//  auto flattenResult = G::flatten(result);
+//  return flattenResult;
+}
