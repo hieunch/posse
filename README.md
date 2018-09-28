@@ -91,6 +91,8 @@ Prerequisites
 Castalia
 - Located in `Castalia/Castalia` directory
 - After adding new routing algorithm or modify source code: `$ ./makemake` then ` make ` to rebuild Castalia (only takes seconds)
+- Make sure `posse/Castalia/Castalia/bin` is in your PATH by append this into your .bashrc: `export PATH=[POSSE DIRECTORY PATH]/Castalia/Castalia/bin:$PATH`
+
 
 
 Client
@@ -99,9 +101,10 @@ Client
 - Start the client: `$ yarn start`
 
 Server
-
 - Located in `/Castalia/Castalia/Simulations/server` directory
 - Install dependencies: `$ yarn`
-- Start the client: `$ yarn start`
+- Make sure we have a directory `logs` and `archives` in server directory: `mkdir logs && mkdir archives`
+- Start the server: `$ yarn start`
+
  
 
