@@ -7,6 +7,12 @@ Define_Module(MlpRouting);
 int MlpRouting::cnt = 0;
 int MlpRouting::nextId;
 
+int getRandomNumber(int from, int to) {
+    srand(time(0));
+    int result = from + rand() % (to - from + 1);
+    return result;
+}
+
 void MlpRouting::startup(){
   nextId = 0; // static member
   setTimer(DISCOVER_HOLE_START, 1);
@@ -82,6 +88,7 @@ void MlpRouting::fromApplicationLayer(cPacket * pkt, const char *destination){
 
   dataPacket->setDestLocation(GlobalLocationService::getLocation(atoi(destination)));
   dataPacket->setPacketId(nextId++);
+
 
   processDataPacket(dataPacket);
 }
@@ -192,7 +199,7 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
   holeDiameter = G::diameter(convexHull);
   double distanceToHole = G::distanceToPolygon(convexHull, selfLocation);
 
-  if (distanceToHole < 20 * log2(holeDiameter) || G::pointInOrOnPolygon(convexHull, selfLocation)) {
+  if (distanceToHole < 200 * log2(holeDiameter) || G::pointInOrOnPolygon(convexHull, selfLocation)) {
     propagateHole(pkt);
   }
 
@@ -200,8 +207,8 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
     debugPolygon(hole, "#8d168f");
 //    debugPolygon(convexHull, "#8d168f");
 
-    findPathOutCavern(GlobalLocationService::getLocation(635),
-     GlobalLocationService::getLocation(1692), hole, caverns[0], 40);
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 25);
   }
 
 }
@@ -269,7 +276,11 @@ void MlpRouting::propagateHole(DiscoverHolePacket *pkt) {
 }
 
 void MlpRouting::processDataPacket(MlpPacket* pkt){
-
+  Point destLocation = pkt->getDestLocation();
+  if (receivedHole) {
+    auto path = findPath(selfLocation, destLocation, hole, caverns);
+    debugPath(path, "green");
+  }
 }
 
 
@@ -279,12 +290,78 @@ void MlpRouting::handleNetworkControlCommand(cMessage *msg) {
 
 }
 
+vector<Point> MlpRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
+  vector<Point> result;
+  double inCavernRadius = -1;
+  double outCavernRadius = -1;
+  double aroundHoleRadius = -1;
+
+  // strange case
+  if (hole.empty()) {
+    return {from, to};
+  }
+
+  // go straight
+  if (G::outOrOnPolygon(hole, LineSegment(from, to))) {
+    return {from, to};
+  }
+
+  // in the same cavern
+  for (auto cavern: caverns) {
+    if (G::pointInOrOnPolygon(cavern, from) && G::pointInOrOnPolygon(cavern, to)) {
+      return G::shortestPathInOrOnPolygon(cavern, from, to);
+    }
+  }
+
+  vector<Point> outCavern = {};
+  vector<Point> inCavern = {};
+  Point newFrom = from, newTo = to;
+
+  int delta = getRandomNumber(-RANGE, RANGE);
+  log () << rand();
+  log () << "delta " << delta;
+
+  for (auto cavern: caverns) {
+    if (G::pointInOrOnPolygon(cavern, from)) {
+      outCavern = findPathOutCavern(from, to, hole, cavern, delta);
+      newFrom = outCavern[outCavern.size() - 1];
+      break;
+    }
+  }
+
+  for (auto cavern: caverns) {
+    if (G::pointInOrOnPolygon(cavern, to)) {
+      inCavern = findPathOutCavern(to, from, hole, cavern, delta);
+      reverse(inCavern.begin(), inCavern.end());
+      newTo = inCavern[0];
+      break;
+    }
+  }
+
+  from = newFrom;
+  to = newTo;
+
+  double maxRadius = 5 * log2(holeDiameter);
+  int path = getRandomNumber(1, 2 * RANGE);
+  aroundHoleRadius = maxRadius / (2 * RANGE) * path;
+
+  vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
+
+  result.insert(result.end(), outCavern.begin(), outCavern.end());
+  result.insert(result.end(), middlePath.begin(), middlePath.end());
+  result.insert(result.end(), inCavern.begin(), inCavern.end());
+
+  return G::flatten(result);
+}
+
 
 vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> &hole,
-                                vector<Point> &cavern, double k) {
+                                vector<Point> &cavern, int delta) {
+  // delta from -RANGE to RANGE
+  double baseK = G::distance(cavern[0], cavern[cavern.size() - 1]) / 8;
+  vector<Point> interiorCavern = G::rollBallCavern(cavern, baseK);
 
-
-  vector<Point> interiorCavern = G::rollBallCavern(cavern, k);
+  debugPolygon(interiorCavern, "red");
   vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
 
   // gate
@@ -303,7 +380,7 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
   if (I.isUnspecified()) return vector<Point>(); // not gonna happen
   vector<Point> result;
 
-  Point T = I + Vector(M, N).rotate(M_PI / 2) * (k / Vector(M, N).length());
+  Point T = I + Vector(M, N).rotate(M_PI / 2) * (baseK / Vector(M, N).length());
   if (!G::pointInOrOnPolygon(interiorCavern, from)) {
     double minDistance = INT_MAX;
     Point closest = G::closestPointOnPolygon(interiorCavern, from);
@@ -317,19 +394,51 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
 
   // from to T
   vector<Point> spInterior = G::shortestPathInOrOnPolygon(interiorCavern, from, T);
+  debugPath(spInterior, "blue");
+  auto translatedRoad = G::translate(spInterior, (baseK / RANGE) * delta);
+  for (auto p: translatedRoad) result.push_back(p);
 
-  // main road
-  vector<Point> mainRoad(result.begin(), result.end());
-  for (auto p: spInterior) mainRoad.push_back(p);
+  auto flattenResult = G::flatten(result);
 
-//  debugPath(spInterior, "green");
-  debugPath(G::translate(spInterior, -30), "red");
-  debugPath(G::translate(spInterior, -20), "red");
-  debugPath(G::translate(spInterior, -10), "red");
+  return flattenResult;
+}
 
-  return {};
+vector<Point> MlpRouting::findPathAroundHole(Point from, Point to, vector<Point> &hole, double ballRadius) {
 
-//
-//  auto flattenResult = G::flatten(result);
-//  return flattenResult;
+  if (G::outOrOnPolygon(hole, LineSegment(from, to))) {
+    vector<Point> result = {from, to};
+    return result;
+  }
+
+
+  vector<Point> convexHull = G::convexHull(hole);
+  vector<Point> balledConvexHull = G::rollBallPolygon(convexHull, ballRadius);
+  vector<Point> res;
+  auto closestFrom = from, closestTo = to;
+  if (G::pointInOrOnPolygon(balledConvexHull, from)) {
+    closestFrom = G::closestPointOnPolygon(balledConvexHull, from);
+  }
+  if (G::pointInOrOnPolygon(balledConvexHull, to)) {
+    closestTo = G::closestPointOnPolygon(balledConvexHull, to);
+  }
+
+  if (closestFrom != from) {
+    for (auto p: G::shortestPathOutOrOnPolygon(hole, from, closestFrom)) {
+      res.push_back(p);
+    }
+  }
+
+  for (auto p: G::shortestPathOutOrOnPolygon(balledConvexHull, closestFrom, closestTo)) {
+    res.push_back(p);
+  }
+
+  if (closestTo != to) {
+    for (auto p: G::shortestPathOutOrOnPolygon(hole, closestTo, to)) {
+      res.push_back(p);
+    }
+  }
+
+  auto flattenResult = G::flatten(res);
+
+  return flattenResult;
 }

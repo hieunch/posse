@@ -7,6 +7,7 @@ int GreedyRouting::nextId;
 void GreedyRouting::startup(){
   seqHello = par("seqHello");
   nextId = 0; // static member
+
 }
 
 void GreedyRouting::timerFiredCallback(int index){

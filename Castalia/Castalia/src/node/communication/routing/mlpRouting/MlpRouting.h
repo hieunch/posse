@@ -30,7 +30,7 @@ class MlpRouting: public VirtualRouting {
   private:
     static int cnt;
     static int nextId;
-    const int NUM_PATH = 5;
+    const int RANGE = 2;
     double holeDiameter;
     // Parameters
     int MlpSetupFrameOverhead;	// in bytes
@@ -57,7 +57,10 @@ class MlpRouting: public VirtualRouting {
     void processDiscoverHolePacket(DiscoverHolePacket*);
     void processHole(DiscoverHolePacket*);
     void propagateHole(DiscoverHolePacket*);
-    vector<Point> findPathOutCavern(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, double k);
+    vector<Point> findPath(Point from, Point to,
+        vector<Point> &hole, vector<vector<Point>> &caverns);
+    vector<Point> findPathOutCavern(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, int delta);
+    vector<Point> findPathAroundHole(Point from, Point to, vector<Point> &hole, double ballRadius);
 };
 
 #endif				//MLPROUTINGMODULE

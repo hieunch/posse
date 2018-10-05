@@ -215,12 +215,16 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
   if (self == 787) {
     debugPolygon(hole, "#8d168f");
     debugPolygon(convexHull, "#8d168f");
-    findPathOutCavern(GlobalLocationService::getLocation(635),
-     GlobalLocationService::getLocation(1692), hole, caverns[0], 10);
-    findPathOutCavern(GlobalLocationService::getLocation(635),
-     GlobalLocationService::getLocation(1692), hole, caverns[0], 20);
-    findPathOutCavern(GlobalLocationService::getLocation(635),
-     GlobalLocationService::getLocation(1692), hole, caverns[0], 30);
+    findPathOutCavern(GlobalLocationService::getLocation(1622),
+     GlobalLocationService::getLocation(2796), hole, caverns[0], 11);
+    findPathOutCavern(GlobalLocationService::getLocation(1622),
+     GlobalLocationService::getLocation(2796), hole, caverns[0], 18);
+    findPathOutCavern(GlobalLocationService::getLocation(1622),
+     GlobalLocationService::getLocation(2796), hole, caverns[0], 25);
+    findPathOutCavern(GlobalLocationService::getLocation(1622),
+     GlobalLocationService::getLocation(2796), hole, caverns[0], 32);
+    findPathOutCavern(GlobalLocationService::getLocation(1622),
+     GlobalLocationService::getLocation(2796), hole, caverns[0], 39);
   }
 
 }

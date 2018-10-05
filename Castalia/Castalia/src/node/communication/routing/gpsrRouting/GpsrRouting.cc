@@ -13,6 +13,9 @@ void GpsrRouting::startup(){
 //      debugLine(selfLocation, n.location, "#D3D3D3");
 //    }
 //  }
+  if (self == 1) {
+    log() << "I am id num 1";
+  }
 }
 
 void GpsrRouting::timerFiredCallback(int index){
