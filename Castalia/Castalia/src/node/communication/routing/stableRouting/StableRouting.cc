@@ -212,20 +212,20 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
     propagateHole(pkt);
   }
 
-  if (self == 787) {
-    debugPolygon(hole, "#8d168f");
-    debugPolygon(convexHull, "#8d168f");
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 11);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 18);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 25);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 32);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 39);
-  }
+//  if (self == 787) {
+//    debugPolygon(hole, "#8d168f");
+//    debugPolygon(convexHull, "#8d168f");
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 11);
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 18);
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 25);
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 32);
+//    findPathOutCavern(GlobalLocationService::getLocation(1622),
+//     GlobalLocationService::getLocation(2796), hole, caverns[0], 39);
+//  }
 
 }
 
@@ -576,7 +576,7 @@ vector<Point> StableRouting::findPathAroundHole(Point from, Point to, vector<Poi
 }
 
 tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
-  log() << "ahihi hi";
+//  log() << "ahihi hi";
   vector<Point> result;
   double inCavernRadius = -1;
   double outCavernRadius = -1;
@@ -640,14 +640,14 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
 //  debugPolygon(G::rollBallPolygon(G::convexHull(hole), aroundHoleRadius), "purple");
 
-  debugPath(middlePath, "green");
-  debugPath(inCavern, "blue");
-  if (outCavern.size() > 0) {
-    debugPath(outCavern, "red");
-    for (auto p: outCavern) debugPoint(p, "red");
-  }
-  for (auto p: middlePath) debugPoint(p, "green");
-  for (auto p: inCavern) debugPoint(p, "blue");
+//  debugPath(middlePath, "green");
+//  debugPath(inCavern, "blue");
+//  if (outCavern.size() > 0) {
+//    debugPath(outCavern, "red");
+//    for (auto p: outCavern) debugPoint(p, "red");
+//  }
+//  for (auto p: middlePath) debugPoint(p, "green");
+//  for (auto p: inCavern) debugPoint(p, "blue");
 
   result.insert(result.end(), outCavern.begin(), outCavern.end());
   result.insert(result.end(), middlePath.begin(), middlePath.end());

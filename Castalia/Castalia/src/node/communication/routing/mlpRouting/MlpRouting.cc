@@ -379,6 +379,7 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
 
   if (I.isUnspecified()) return vector<Point>(); // not gonna happen
   vector<Point> result;
+  result.push_back(from);
 
   Point T = I + Vector(M, N).rotate(M_PI / 2) * (baseK / Vector(M, N).length());
   if (!G::pointInOrOnPolygon(interiorCavern, from)) {

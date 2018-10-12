@@ -315,7 +315,7 @@ function init({nodes, width, height, range}) {
 
   let submitReal = () => {
     // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
-    let algorithms = ['gpsr'];
+    let algorithms = ['gpsr', 'stable'];
     let accData = [];
     let ts = [];
     ts.push(genTraffic(10));

@@ -36,8 +36,8 @@ void VirtualRouting::initialize()
 		opp_error("\n Virtual Routing init: Error in geting a valid reference module(s).");
 
 	self = getParentModule()->getParentModule()->getIndex();
-  neighborTable = GlobalLocationService::getNeighborTable(self);
-  selfLocation = GlobalLocationService::getLocation(self);
+    neighborTable = GlobalLocationService::getNeighborTable(self);
+    selfLocation = GlobalLocationService::getLocation(self);
 	// create the routing level address using self
 	stringstream out; out << self; 	selfAddress = out.str();
 
