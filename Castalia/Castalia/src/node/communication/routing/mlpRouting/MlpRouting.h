@@ -9,6 +9,7 @@
 #include "StableRoutingPacket_m.h"
 #include "GeoMathHelper.h"
 
+#define NULL_VAL 99999
 
 #define DEFAULT_MLP_TIMEOUT   200.0
 /* the default time out period is 200.0 sec
@@ -42,6 +43,10 @@ class MlpRouting: public VirtualRouting {
     vector<Point> hole;
     vector<Point> holeConvexHull;
     vector<vector<Point>> caverns;
+
+    static map<tuple<tuple<Point, Point>, Point, Point, int>, vector<Point> > outCavernCache;
+    static map<tuple<Point, Point, double>, vector<Point> > aroundHoleCache;
+    static map<tuple<Point, Point, int, double, int>, vector<Point> > findPathCache;
   protected:
 
     void startup();
@@ -57,7 +62,7 @@ class MlpRouting: public VirtualRouting {
     void processDiscoverHolePacket(DiscoverHolePacket*);
     void processHole(DiscoverHolePacket*);
     void propagateHole(DiscoverHolePacket*);
-    vector<Point> findPath(Point from, Point to,
+    tuple<vector<Point>, int, double, int> findPath(Point from, Point to,
         vector<Point> &hole, vector<vector<Point>> &caverns);
     vector<Point> findPathOutCavern(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, int delta);
     vector<Point> findPathAroundHole(Point from, Point to, vector<Point> &hole, double ballRadius);

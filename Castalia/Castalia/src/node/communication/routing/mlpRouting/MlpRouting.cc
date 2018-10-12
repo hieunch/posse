@@ -6,6 +6,9 @@ Define_Module(MlpRouting);
 
 int MlpRouting::cnt = 0;
 int MlpRouting::nextId;
+map<tuple<tuple<Point, Point>, Point, Point, int>, vector<Point> > MlpRouting::outCavernCache;
+map<tuple<Point, Point, double>, vector<Point> > MlpRouting::aroundHoleCache;
+map<tuple<Point, Point, int, double, int>, vector<Point> > MlpRouting::findPathCache;
 
 int getRandomNumber(int from, int to) {
     srand(time(0));
@@ -278,8 +281,8 @@ void MlpRouting::propagateHole(DiscoverHolePacket *pkt) {
 void MlpRouting::processDataPacket(MlpPacket* pkt){
   Point destLocation = pkt->getDestLocation();
   if (receivedHole) {
-    auto path = findPath(selfLocation, destLocation, hole, caverns);
-    debugPath(path, "green");
+//    auto path = findPath(selfLocation, destLocation, hole, caverns);
+//    debugPath(path, "green");
   }
 }
 
@@ -290,26 +293,30 @@ void MlpRouting::handleNetworkControlCommand(cMessage *msg) {
 
 }
 
-vector<Point> MlpRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
+tuple<vector<Point>, int, double, int> MlpRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
   vector<Point> result;
-  double inCavernRadius = -1;
-  double outCavernRadius = -1;
-  double aroundHoleRadius = -1;
+
+  int inDelta = NULL_VAL;
+  int outDelta = NULL_VAL;
+  double aroundHoleRadius = NULL_VAL;
 
   // strange case
   if (hole.empty()) {
-    return {from, to};
+    vector<Point> path = {from, to};
+    return make_tuple(path, outDelta, aroundHoleRadius, inDelta);
   }
 
   // go straight
   if (G::outOrOnPolygon(hole, LineSegment(from, to))) {
-    return {from, to};
+    vector<Point> path = {from, to};
+    return make_tuple(path, outDelta, aroundHoleRadius, inDelta);
   }
 
   // in the same cavern
   for (auto cavern: caverns) {
     if (G::pointInOrOnPolygon(cavern, from) && G::pointInOrOnPolygon(cavern, to)) {
-      return G::shortestPathInOrOnPolygon(cavern, from, to);
+      auto result = G::shortestPathInOrOnPolygon(cavern, from, to);
+      return make_tuple(result, outDelta, aroundHoleRadius, inDelta);
     }
   }
 
@@ -351,13 +358,21 @@ vector<Point> MlpRouting::findPath(Point from, Point to, vector<Point> &hole, ve
   result.insert(result.end(), middlePath.begin(), middlePath.end());
   result.insert(result.end(), inCavern.begin(), inCavern.end());
 
-  return G::flatten(result);
+  auto flattenResult = G::flatten(result);
+
+  return make_tuple(flattenResult, outDelta, aroundHoleRadius, inDelta);
 }
 
 
 vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> &hole,
                                 vector<Point> &cavern, int delta) {
   // delta from -RANGE to RANGE
+
+  tuple<Point, Point> cavernHash = G::hash(cavern);
+  if (outCavernCache.find(make_tuple(cavernHash, from, to, delta)) != outCavernCache.end()) {
+    return outCavernCache[make_tuple(cavernHash, from, to, delta)];
+  }
+
   double baseK = G::distance(cavern[0], cavern[cavern.size() - 1]) / 8;
   vector<Point> interiorCavern = G::rollBallCavern(cavern, baseK);
 
@@ -401,10 +416,16 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
 
   auto flattenResult = G::flatten(result);
 
+  outCavernCache[make_tuple(cavernHash, from, to, delta)] = flattenResult;
+
   return flattenResult;
 }
 
 vector<Point> MlpRouting::findPathAroundHole(Point from, Point to, vector<Point> &hole, double ballRadius) {
+
+  if (aroundHoleCache.find(make_tuple(from, to, ballRadius)) != aroundHoleCache.end()) {
+    return aroundHoleCache[make_tuple(from, to, ballRadius)];
+  }
 
   if (G::outOrOnPolygon(hole, LineSegment(from, to))) {
     vector<Point> result = {from, to};
@@ -441,5 +462,6 @@ vector<Point> MlpRouting::findPathAroundHole(Point from, Point to, vector<Point>
 
   auto flattenResult = G::flatten(res);
 
+  aroundHoleCache[make_tuple(from, to, ballRadius)] = flattenResult;
   return flattenResult;
 }
