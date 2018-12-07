@@ -18,10 +18,11 @@
 // cplusplus {{
 #include "RoutingPacket_m.h"
 #include "GeoMathHelper.h"
+#include "StableRoutingPacket_m.h"
 // }}
 
 /**
- * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:11</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:12</tt> by nedtool.
  * <pre>
  * enum MlpPacketDef
  * {
@@ -35,7 +36,23 @@ enum MlpPacketDef {
 };
 
 /**
- * Class generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:15</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:16</tt> by nedtool.
+ * <pre>
+ * enum MLPForwardingMode
+ * {
+ * 
+ *     MLP_GREEDY_ROUTING = 0;
+ *     MLP_ROLLINGBALL_ROUTING = 1;
+ * }
+ * </pre>
+ */
+enum MLPForwardingMode {
+    MLP_GREEDY_ROUTING = 0,
+    MLP_ROLLINGBALL_ROUTING = 1
+};
+
+/**
+ * Class generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:21</tt> by nedtool.
  * <pre>
  * packet MlpPacket extends RoutingPacket
  * {
@@ -46,6 +63,19 @@ enum MlpPacketDef {
  *     // normal field
  *     Point destLocation;
  *     Point sourceLocation;
+ * 
+ *     // for routing point to point
+ *     Point ballCenter;
+ *     Point stuckLocation;
+ *     int routingMode @enum(MLPForwardingMode);
+ * 
+ * 
+ *     Point nextStoppingPlace;
+ * 
+ *     Point startStableLocation;
+ *     int outDelta = 99999;
+ *     double aroundHoleRadius = 99999;
+ *     int inDelta = 99999;
  * }
  * </pre>
  */
@@ -57,6 +87,14 @@ class MlpPacket : public ::RoutingPacket
     int MlpPacketKind_var;
     Point destLocation_var;
     Point sourceLocation_var;
+    Point ballCenter_var;
+    Point stuckLocation_var;
+    int routingMode_var;
+    Point nextStoppingPlace_var;
+    Point startStableLocation_var;
+    int outDelta_var;
+    double aroundHoleRadius_var;
+    int inDelta_var;
 
   private:
     void copy(const MlpPacket& other);
@@ -87,6 +125,26 @@ class MlpPacket : public ::RoutingPacket
     virtual Point& getSourceLocation();
     virtual const Point& getSourceLocation() const {return const_cast<MlpPacket*>(this)->getSourceLocation();}
     virtual void setSourceLocation(const Point& sourceLocation);
+    virtual Point& getBallCenter();
+    virtual const Point& getBallCenter() const {return const_cast<MlpPacket*>(this)->getBallCenter();}
+    virtual void setBallCenter(const Point& ballCenter);
+    virtual Point& getStuckLocation();
+    virtual const Point& getStuckLocation() const {return const_cast<MlpPacket*>(this)->getStuckLocation();}
+    virtual void setStuckLocation(const Point& stuckLocation);
+    virtual int getRoutingMode() const;
+    virtual void setRoutingMode(int routingMode);
+    virtual Point& getNextStoppingPlace();
+    virtual const Point& getNextStoppingPlace() const {return const_cast<MlpPacket*>(this)->getNextStoppingPlace();}
+    virtual void setNextStoppingPlace(const Point& nextStoppingPlace);
+    virtual Point& getStartStableLocation();
+    virtual const Point& getStartStableLocation() const {return const_cast<MlpPacket*>(this)->getStartStableLocation();}
+    virtual void setStartStableLocation(const Point& startStableLocation);
+    virtual int getOutDelta() const;
+    virtual void setOutDelta(int outDelta);
+    virtual double getAroundHoleRadius() const;
+    virtual void setAroundHoleRadius(double aroundHoleRadius);
+    virtual int getInDelta() const;
+    virtual void setInDelta(int inDelta);
 };
 
 inline void doPacking(cCommBuffer *b, MlpPacket& obj) {obj.parsimPack(b);}

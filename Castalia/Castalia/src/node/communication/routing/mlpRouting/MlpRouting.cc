@@ -202,7 +202,7 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
   holeDiameter = G::diameter(convexHull);
   double distanceToHole = G::distanceToPolygon(convexHull, selfLocation);
 
-  if (distanceToHole < 200 * log2(holeDiameter) || G::pointInOrOnPolygon(convexHull, selfLocation)) {
+  if (distanceToHole < 20 * log2(holeDiameter) || G::pointInOrOnPolygon(convexHull, selfLocation)) {
     propagateHole(pkt);
   }
 
@@ -280,9 +280,158 @@ void MlpRouting::propagateHole(DiscoverHolePacket *pkt) {
 
 void MlpRouting::processDataPacket(MlpPacket* pkt){
   Point destLocation = pkt->getDestLocation();
-  if (receivedHole) {
-//    auto path = findPath(selfLocation, destLocation, hole, caverns);
-//    debugPath(path, "green");
+  if (pkt->getNextStoppingPlace().isUnspecified()) {
+    if (receivedHole) {
+      // first time in
+      vector<Point> path;
+      double aroundHoleRadius;
+      int outDelta, inDelta;
+      tie(path, outDelta, aroundHoleRadius, inDelta) = findPath(selfLocation,
+        destLocation, hole, caverns);
+      findPathCache[make_tuple(selfLocation, destLocation, outDelta, aroundHoleRadius, inDelta)] = path;
+      pkt->setOutDelta(outDelta);
+      pkt->setAroundHoleRadius(aroundHoleRadius);
+      pkt->setInDelta(inDelta);
+      pkt->setStartStableLocation(selfLocation);
+      pkt->setNextStoppingPlace(path[1]);
+      pkt->setRoutingMode(MLP_GREEDY_ROUTING);
+
+      processDataPacket(pkt);
+    }
+    else {
+      // still outside
+      if (pkt->getRoutingMode() == MLP_GREEDY_ROUTING) {
+        int nextHop = -1;
+        double minDist = G::distance(selfLocation, destLocation);
+
+        for (auto &neighbor: neighborTable) {
+          double dist = G::distance(destLocation, neighbor.location);
+
+          if (dist < minDist) {
+            minDist = dist;
+            nextHop = neighbor.id;
+          }
+        }
+        if (nextHop != -1) {
+//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          toMacLayer(pkt, nextHop);
+        } else {
+
+          pkt->setRoutingMode(MLP_ROLLINGBALL_ROUTING);
+          pkt->setStuckLocation(selfLocation);
+
+          // compute first ball with radius = RADIO_RANGE/2
+          double x1 = selfLocation.x(), y1 = selfLocation.y();
+          double x2 = destLocation.x(), y2 = destLocation.y();
+          double d = G::distance(selfLocation, destLocation);
+          double centerX = x1 + (x2 - x1) * RADIO_RANGE / 2 / d;
+          double centerY = y1 + (y2 - y1) * RADIO_RANGE / 2 / d;
+
+          // set ball radius
+          pkt->setBallCenter(Point(centerX, centerY));
+
+          processDataPacket(pkt);
+        }
+      }
+      else {
+        Point stuckLocation = pkt->getStuckLocation();
+        Point destLocation = pkt->getDestLocation();
+        if (G::distance(selfLocation, destLocation) < G::distance(stuckLocation, destLocation)) {
+          pkt->setRoutingMode(MLP_GREEDY_ROUTING);
+          processDataPacket(pkt);
+        } else {
+          int nextHop = -1;
+          Point nextCenter;
+          Point ballCenter = pkt->getBallCenter();
+          nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
+          if (nextHop != -1) {
+//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            toMacLayer(pkt, nextHop);
+          }
+        }
+      }
+    }
+  }
+  else {
+    // heading to the next stopping place
+    Point nextStoppingPlace = pkt->getNextStoppingPlace();
+    if (reached(nextStoppingPlace)) {
+//      debugPoint(selfLocation, "green");
+      Point startStableLocation = pkt->getStartStableLocation();
+      double outDelta = pkt->getOutDelta();
+      double aroundHoleRadius = pkt->getAroundHoleRadius();
+      double inDelta = pkt->getInDelta();
+
+      if (findPathCache.find(make_tuple(startStableLocation, destLocation, outDelta, aroundHoleRadius, inDelta))
+        != findPathCache.end()) {
+        vector<Point> path = findPathCache[make_tuple(startStableLocation, destLocation, outDelta,
+            aroundHoleRadius, inDelta)];
+        int j = -1;
+        for (int i = 0; i < path.size() - 1; i++) {
+          if (path[i] == nextStoppingPlace) {
+            j = i;
+            break;
+          }
+        }
+
+        if (j != -1) {
+          pkt->setNextStoppingPlace(path[j + 1]);
+          processDataPacket(pkt);
+        }
+
+      } else {
+        log() << "not in cache";
+      }
+    } else {
+      if (pkt->getRoutingMode() == MLP_GREEDY_ROUTING) {
+        int nextHop = -1;
+        double minDist = G::distance(selfLocation, nextStoppingPlace);
+
+        for (auto &neighbor: neighborTable) {
+          double dist = G::distance(nextStoppingPlace, neighbor.location);
+
+          if (dist < minDist) {
+            minDist = dist;
+            nextHop = neighbor.id;
+          }
+        }
+        if (nextHop != -1) {
+//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          toMacLayer(pkt, nextHop);
+        } else {
+          pkt->setRoutingMode(MLP_ROLLINGBALL_ROUTING);
+          pkt->setStuckLocation(selfLocation);
+
+          // compute first ball with radius = RADIO_RANGE/2
+          double x1 = selfLocation.x(), y1 = selfLocation.y();
+          double x2 = nextStoppingPlace.x(), y2 = nextStoppingPlace.y();
+          double d = G::distance(selfLocation, nextStoppingPlace);
+          double centerX = x1 + (x2 - x1) * RADIO_RANGE / 2 / d;
+          double centerY = y1 + (y2 - y1) * RADIO_RANGE / 2 / d;
+
+          // set ball radius
+          pkt->setBallCenter(Point(centerX, centerY));
+
+          processDataPacket(pkt);
+        }
+      }
+      else {
+        Point stuckLocation = pkt->getStuckLocation();
+        if (G::distance(selfLocation, nextStoppingPlace) < G::distance(stuckLocation, nextStoppingPlace)) {
+          pkt->setRoutingMode(MLP_GREEDY_ROUTING);
+          processDataPacket(pkt);
+        } else {
+          int nextHop = -1;
+          Point nextCenter;
+          Point ballCenter = pkt->getBallCenter();
+          nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
+          if (nextHop != -1) {
+//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            toMacLayer(pkt, nextHop);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -405,16 +554,21 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
       result.push_back(shortestPathToClosest[i]);
     }
 
+//    debugLine(from, closest, "black");
     from = closest;
   }
 
+//  debugPath(result, "black");
+//  log() << result.size();
+
   // from to T
   vector<Point> spInterior = G::shortestPathInOrOnPolygon(interiorCavern, from, T);
-  debugPath(spInterior, "blue");
+//  debugPath(spInterior, "blue");
   auto translatedRoad = G::translate(spInterior, (baseK / RANGE) * delta);
   for (auto p: translatedRoad) result.push_back(p);
 
   auto flattenResult = G::flatten(result);
+//  debugPath(flattenResult, "brown");
 
   outCavernCache[make_tuple(cavernHash, from, to, delta)] = flattenResult;
 

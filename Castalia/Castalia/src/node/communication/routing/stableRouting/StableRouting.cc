@@ -298,7 +298,6 @@ void StableRouting::processDataPacket(StablePacket* pkt){
   Point destLocation = pkt->getDestLocation();
   if (pkt->getNextStoppingPlace().isUnspecified()) {
     if (receivedHole) {
-      log () << "receive hole ";
       // first time in
       vector<Point> path;
       double outCavernRadius, aroundHoleRadius, inCavernRadius;

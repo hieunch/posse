@@ -62,8 +62,8 @@ const generateNodes = ({width, height, V}) => {
     for (let j = 0; j < nCellHeight; j++) {
       let startX = cellWidth * i;
       let startY = cellHeight * j;
-      const x = Math.random() * cellWidth + startX;
-      const y = Math.random() * cellHeight + startY;
+      const x = Math.random() * cellWidth * 0.75 + startX + cellWidth * 0.125;
+      const y = Math.random() * cellHeight * 0.75 + startY + cellHeight * 0.125;
       nodes.push({x, y, id: nextId});
       nextId++;
     }
@@ -315,11 +315,11 @@ function init({nodes, width, height, range}) {
 
   let submitReal = () => {
     // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
-    let algorithms = ['gpsr', 'stable'];
+    let algorithms = ['stable', 'mlp'];
     let accData = [];
     let ts = [];
-    ts.push(genTraffic(10));
-    for (let i = 0; i < 1; i++) {
+    ts.push(genTraffic(15));
+    for (let i = 0; i < 0; i++) {
       ts.push(addTraffic(ts[ts.length - 1], 5));
     }
 

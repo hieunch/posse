@@ -59,6 +59,13 @@ EXECUTE_ON_STARTUP(
     e->insert(MLP_DATA_PACKET, "MLP_DATA_PACKET");
 );
 
+EXECUTE_ON_STARTUP(
+    cEnum *e = cEnum::find("MLPForwardingMode");
+    if (!e) enums.getInstance()->add(e = new cEnum("MLPForwardingMode"));
+    e->insert(MLP_GREEDY_ROUTING, "MLP_GREEDY_ROUTING");
+    e->insert(MLP_ROLLINGBALL_ROUTING, "MLP_ROLLINGBALL_ROUTING");
+);
+
 Register_Class(MlpPacket);
 
 MlpPacket::MlpPacket(const char *name, int kind) : ::RoutingPacket(name,kind)
@@ -66,6 +73,10 @@ MlpPacket::MlpPacket(const char *name, int kind) : ::RoutingPacket(name,kind)
     this->packetId_var = 0;
     this->previousId_var = 0;
     this->MlpPacketKind_var = 0;
+    this->routingMode_var = 0;
+    this->outDelta_var = 99999;
+    this->aroundHoleRadius_var = 99999;
+    this->inDelta_var = 99999;
 }
 
 MlpPacket::MlpPacket(const MlpPacket& other) : ::RoutingPacket(other)
@@ -92,6 +103,14 @@ void MlpPacket::copy(const MlpPacket& other)
     this->MlpPacketKind_var = other.MlpPacketKind_var;
     this->destLocation_var = other.destLocation_var;
     this->sourceLocation_var = other.sourceLocation_var;
+    this->ballCenter_var = other.ballCenter_var;
+    this->stuckLocation_var = other.stuckLocation_var;
+    this->routingMode_var = other.routingMode_var;
+    this->nextStoppingPlace_var = other.nextStoppingPlace_var;
+    this->startStableLocation_var = other.startStableLocation_var;
+    this->outDelta_var = other.outDelta_var;
+    this->aroundHoleRadius_var = other.aroundHoleRadius_var;
+    this->inDelta_var = other.inDelta_var;
 }
 
 void MlpPacket::parsimPack(cCommBuffer *b)
@@ -102,6 +121,14 @@ void MlpPacket::parsimPack(cCommBuffer *b)
     doPacking(b,this->MlpPacketKind_var);
     doPacking(b,this->destLocation_var);
     doPacking(b,this->sourceLocation_var);
+    doPacking(b,this->ballCenter_var);
+    doPacking(b,this->stuckLocation_var);
+    doPacking(b,this->routingMode_var);
+    doPacking(b,this->nextStoppingPlace_var);
+    doPacking(b,this->startStableLocation_var);
+    doPacking(b,this->outDelta_var);
+    doPacking(b,this->aroundHoleRadius_var);
+    doPacking(b,this->inDelta_var);
 }
 
 void MlpPacket::parsimUnpack(cCommBuffer *b)
@@ -112,6 +139,14 @@ void MlpPacket::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->MlpPacketKind_var);
     doUnpacking(b,this->destLocation_var);
     doUnpacking(b,this->sourceLocation_var);
+    doUnpacking(b,this->ballCenter_var);
+    doUnpacking(b,this->stuckLocation_var);
+    doUnpacking(b,this->routingMode_var);
+    doUnpacking(b,this->nextStoppingPlace_var);
+    doUnpacking(b,this->startStableLocation_var);
+    doUnpacking(b,this->outDelta_var);
+    doUnpacking(b,this->aroundHoleRadius_var);
+    doUnpacking(b,this->inDelta_var);
 }
 
 int MlpPacket::getPacketId() const
@@ -164,6 +199,86 @@ void MlpPacket::setSourceLocation(const Point& sourceLocation)
     this->sourceLocation_var = sourceLocation;
 }
 
+Point& MlpPacket::getBallCenter()
+{
+    return ballCenter_var;
+}
+
+void MlpPacket::setBallCenter(const Point& ballCenter)
+{
+    this->ballCenter_var = ballCenter;
+}
+
+Point& MlpPacket::getStuckLocation()
+{
+    return stuckLocation_var;
+}
+
+void MlpPacket::setStuckLocation(const Point& stuckLocation)
+{
+    this->stuckLocation_var = stuckLocation;
+}
+
+int MlpPacket::getRoutingMode() const
+{
+    return routingMode_var;
+}
+
+void MlpPacket::setRoutingMode(int routingMode)
+{
+    this->routingMode_var = routingMode;
+}
+
+Point& MlpPacket::getNextStoppingPlace()
+{
+    return nextStoppingPlace_var;
+}
+
+void MlpPacket::setNextStoppingPlace(const Point& nextStoppingPlace)
+{
+    this->nextStoppingPlace_var = nextStoppingPlace;
+}
+
+Point& MlpPacket::getStartStableLocation()
+{
+    return startStableLocation_var;
+}
+
+void MlpPacket::setStartStableLocation(const Point& startStableLocation)
+{
+    this->startStableLocation_var = startStableLocation;
+}
+
+int MlpPacket::getOutDelta() const
+{
+    return outDelta_var;
+}
+
+void MlpPacket::setOutDelta(int outDelta)
+{
+    this->outDelta_var = outDelta;
+}
+
+double MlpPacket::getAroundHoleRadius() const
+{
+    return aroundHoleRadius_var;
+}
+
+void MlpPacket::setAroundHoleRadius(double aroundHoleRadius)
+{
+    this->aroundHoleRadius_var = aroundHoleRadius;
+}
+
+int MlpPacket::getInDelta() const
+{
+    return inDelta_var;
+}
+
+void MlpPacket::setInDelta(int inDelta)
+{
+    this->inDelta_var = inDelta;
+}
+
 class MlpPacketDescriptor : public cClassDescriptor
 {
   public:
@@ -211,7 +326,7 @@ const char *MlpPacketDescriptor::getProperty(const char *propertyname) const
 int MlpPacketDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 5+basedesc->getFieldCount(object) : 5;
+    return basedesc ? 13+basedesc->getFieldCount(object) : 13;
 }
 
 unsigned int MlpPacketDescriptor::getFieldTypeFlags(void *object, int field) const
@@ -228,8 +343,16 @@ unsigned int MlpPacketDescriptor::getFieldTypeFlags(void *object, int field) con
         FD_ISEDITABLE,
         FD_ISCOMPOUND,
         FD_ISCOMPOUND,
+        FD_ISCOMPOUND,
+        FD_ISCOMPOUND,
+        FD_ISEDITABLE,
+        FD_ISCOMPOUND,
+        FD_ISCOMPOUND,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<5) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<13) ? fieldTypeFlags[field] : 0;
 }
 
 const char *MlpPacketDescriptor::getFieldName(void *object, int field) const
@@ -246,8 +369,16 @@ const char *MlpPacketDescriptor::getFieldName(void *object, int field) const
         "MlpPacketKind",
         "destLocation",
         "sourceLocation",
+        "ballCenter",
+        "stuckLocation",
+        "routingMode",
+        "nextStoppingPlace",
+        "startStableLocation",
+        "outDelta",
+        "aroundHoleRadius",
+        "inDelta",
     };
-    return (field>=0 && field<5) ? fieldNames[field] : NULL;
+    return (field>=0 && field<13) ? fieldNames[field] : NULL;
 }
 
 int MlpPacketDescriptor::findField(void *object, const char *fieldName) const
@@ -259,6 +390,14 @@ int MlpPacketDescriptor::findField(void *object, const char *fieldName) const
     if (fieldName[0]=='M' && strcmp(fieldName, "MlpPacketKind")==0) return base+2;
     if (fieldName[0]=='d' && strcmp(fieldName, "destLocation")==0) return base+3;
     if (fieldName[0]=='s' && strcmp(fieldName, "sourceLocation")==0) return base+4;
+    if (fieldName[0]=='b' && strcmp(fieldName, "ballCenter")==0) return base+5;
+    if (fieldName[0]=='s' && strcmp(fieldName, "stuckLocation")==0) return base+6;
+    if (fieldName[0]=='r' && strcmp(fieldName, "routingMode")==0) return base+7;
+    if (fieldName[0]=='n' && strcmp(fieldName, "nextStoppingPlace")==0) return base+8;
+    if (fieldName[0]=='s' && strcmp(fieldName, "startStableLocation")==0) return base+9;
+    if (fieldName[0]=='o' && strcmp(fieldName, "outDelta")==0) return base+10;
+    if (fieldName[0]=='a' && strcmp(fieldName, "aroundHoleRadius")==0) return base+11;
+    if (fieldName[0]=='i' && strcmp(fieldName, "inDelta")==0) return base+12;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
@@ -276,8 +415,16 @@ const char *MlpPacketDescriptor::getFieldTypeString(void *object, int field) con
         "int",
         "Point",
         "Point",
+        "Point",
+        "Point",
+        "int",
+        "Point",
+        "Point",
+        "int",
+        "double",
+        "int",
     };
-    return (field>=0 && field<5) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<13) ? fieldTypeStrings[field] : NULL;
 }
 
 const char *MlpPacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
@@ -291,6 +438,9 @@ const char *MlpPacketDescriptor::getFieldProperty(void *object, int field, const
     switch (field) {
         case 2:
             if (!strcmp(propertyname,"enum")) return "MlpPacketDef";
+            return NULL;
+        case 7:
+            if (!strcmp(propertyname,"enum")) return "MLPForwardingMode";
             return NULL;
         default: return NULL;
     }
@@ -325,6 +475,14 @@ std::string MlpPacketDescriptor::getFieldAsString(void *object, int field, int i
         case 2: return long2string(pp->getMlpPacketKind());
         case 3: {std::stringstream out; out << pp->getDestLocation(); return out.str();}
         case 4: {std::stringstream out; out << pp->getSourceLocation(); return out.str();}
+        case 5: {std::stringstream out; out << pp->getBallCenter(); return out.str();}
+        case 6: {std::stringstream out; out << pp->getStuckLocation(); return out.str();}
+        case 7: return long2string(pp->getRoutingMode());
+        case 8: {std::stringstream out; out << pp->getNextStoppingPlace(); return out.str();}
+        case 9: {std::stringstream out; out << pp->getStartStableLocation(); return out.str();}
+        case 10: return long2string(pp->getOutDelta());
+        case 11: return double2string(pp->getAroundHoleRadius());
+        case 12: return long2string(pp->getInDelta());
         default: return "";
     }
 }
@@ -342,6 +500,10 @@ bool MlpPacketDescriptor::setFieldAsString(void *object, int field, int i, const
         case 0: pp->setPacketId(string2long(value)); return true;
         case 1: pp->setPreviousId(string2long(value)); return true;
         case 2: pp->setMlpPacketKind(string2long(value)); return true;
+        case 7: pp->setRoutingMode(string2long(value)); return true;
+        case 10: pp->setOutDelta(string2long(value)); return true;
+        case 11: pp->setAroundHoleRadius(string2double(value)); return true;
+        case 12: pp->setInDelta(string2long(value)); return true;
         default: return false;
     }
 }
@@ -357,6 +519,10 @@ const char *MlpPacketDescriptor::getFieldStructName(void *object, int field) con
     switch (field) {
         case 3: return opp_typename(typeid(Point));
         case 4: return opp_typename(typeid(Point));
+        case 5: return opp_typename(typeid(Point));
+        case 6: return opp_typename(typeid(Point));
+        case 8: return opp_typename(typeid(Point));
+        case 9: return opp_typename(typeid(Point));
         default: return NULL;
     };
 }
@@ -373,6 +539,10 @@ void *MlpPacketDescriptor::getFieldStructPointer(void *object, int field, int i)
     switch (field) {
         case 3: return (void *)(&pp->getDestLocation()); break;
         case 4: return (void *)(&pp->getSourceLocation()); break;
+        case 5: return (void *)(&pp->getBallCenter()); break;
+        case 6: return (void *)(&pp->getStuckLocation()); break;
+        case 8: return (void *)(&pp->getNextStoppingPlace()); break;
+        case 9: return (void *)(&pp->getStartStableLocation()); break;
         default: return NULL;
     }
 }

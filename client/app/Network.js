@@ -169,42 +169,41 @@ class Network {
 
 
     this.draw.mousedown((e) => {
+      let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
       if (state === 'deleting') {
         isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
         let polyline = this.selectLayer.polyline([x, y]).fill('#ffccca').stroke({width: 0.5});
         polylines.push(polyline);
       } else if (state === 'a') {
         isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
         this.polylineA = this.selectLayer.polyline([x, y]).fill('#dfffd6').stroke({width: 0.5});
       } else if (state === 'b') {
         isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
         this.polylineB = this.selectLayer.polyline([x, y]).fill('#cfd4ff').stroke({width: 0.5});
+      } else if (state === 'm') {
+        this.polylineM = this.selectLayer.polyline([x, y]).fill('#f1ceff').stroke({width: 0.5});
       }
     });
 
     this.draw.mousemove((e) => {
+      let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
       if (state === 'normal') {
       } else if (state === 'deleting') {
         if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
           let polyline = polylines[polylines.length - 1];
           polyline.plot(polyline.array().value.concat([[x, y]])).fill('#ffccca').stroke({width: 0.5});
         }
       } else if (state === 'a') {
         if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
           this.polylineA.plot(this.polylineA.array().value.concat([[x, y]])).fill('#dfffd6').stroke({width: 0.5});
         }
 
       } else if (state === 'b') {
         if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
           this.polylineB.plot(this.polylineB.array().value.concat([[x, y]])).fill('#cfd4ff').stroke({width: 0.5});
         }
-
+      } else if (state === 'm') {
+        this.polylineM.plot(this.polylineM.array().value.concat([[x, y]])).fill('#f1ceff').stroke({width: 0.5});
       }
 
     });
@@ -240,6 +239,10 @@ class Network {
           state = 'normal';
           this.draw.panZoom();
         }
+      } else if (state === 'm') {
+        console.log("hehee");
+        state = 'normal';
+        this.draw.panZoom();
       }
     });
 
@@ -260,6 +263,64 @@ class Network {
         state = 'b';
         this.draw.panZoom(false)
       }
+    });
+
+    Mousetrap.bind(['command+k', 'ctrl+shift+k'], () => {
+      if (state === 'normal') {
+        state = 'm';
+        this.draw.panZoom(false)
+      }
+    });
+
+    Mousetrap.bind(['enter', 'ctrl+enter'], () => {
+      let points = this.polylineM.array().value;
+      let minX = points.reduce((acc, val) => {
+        return Math.min(acc, val[0])
+      }, 1e9);
+      let maxX = points.reduce((acc, val) => {
+        return Math.max(acc, val[0])
+      }, -1e9);
+      let minY = points.reduce((acc, val) => {
+        return Math.min(acc, val[1])
+      }, 1e9);
+      let maxY = points.reduce((acc, val) => {
+        return Math.max(acc, val[1])
+      }, -1e9);
+
+      let num = parseInt(prompt("Number of node added?"));
+      let currentId = this.nodes.reduce((acc, val) => Math.max(acc, val.id), 0);
+
+      for (let i = 0; i < num; i++) {
+        const x = Math.random() * (maxX - minX) + minX;
+        const y = Math.random() * (maxY - minY) + minY;
+        if (inPolygon([x, y], points)) {
+          currentId++;
+          let node = {
+            x, y, id: currentId,
+          };
+          node.circle = this.nodeLayer
+            .circle(NODE_CIRCLE_RADIUS * 2)
+            .center(node.x, node.y)
+            .fill('#b7b7b7');
+          node.circle.click(() => {
+            console.log(node);
+          });
+
+          this.nodes.push(node);
+
+        }
+      }
+
+      console.log(this.nodes.length)
+
+      // this.nodeLayer
+      //   .circle(NODE_CIRCLE_RADIUS * 8)
+      //   .center(minX, minY)
+      //   .fill('#000');
+      // this.nodeLayer
+      //   .circle(NODE_CIRCLE_RADIUS * 8)
+      //   .center(maxX, maxY)
+      //   .fill('#000');
     });
 
     Mousetrap.bind(['del', 'backspace'], () => {
@@ -301,6 +362,10 @@ class Network {
       if (this.polylineB) {
         this.polylineB.remove();
         this.polylineB = null;
+      }
+      if (this.polylineM) {
+        this.polylineM.remove();
+        this.polylineM = null;
       }
     });
 
