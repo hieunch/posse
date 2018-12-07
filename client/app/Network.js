@@ -252,13 +252,13 @@ class Network {
         this.draw.panZoom(false)
       }
     });
-    Mousetrap.bind(['command+a', 'ctrl+shift+a'], () => {
+    Mousetrap.bind(['command+a', 'ctrl+shift+a', 'ctrl+alt+a'], () => {
       if (state === 'normal') {
         state = 'a';
         this.draw.panZoom(false)
       }
     });
-    Mousetrap.bind(['command+b', 'ctrl+shift+b'], () => {
+    Mousetrap.bind(['command+b', 'ctrl+shift+b', 'ctrl+alt+b'], () => {
       if (state === 'normal') {
         state = 'b';
         this.draw.panZoom(false)
