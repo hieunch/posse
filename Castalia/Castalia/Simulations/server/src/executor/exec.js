@@ -102,15 +102,15 @@ function exec({config, sessionId}) {
     }
 
 
-    writer.write(`sim-time-limit = 315s\n`);
+    writer.write(`sim-time-limit = 30s\n`);
 
     for (let i = 0; i < traffic.length; i++) {
       let pair = traffic[i];
       const {source, destination} = pair;
       writer.write(`SN.node[${source}].Application.isSource = true\n`);
       writer.write(`SN.node[${source}].Application.sink = "${destination}"\n`);
-      writer.write(`SN.node[${source}].Application.startSendingTime = ${5 + i * 10}\n`);
-      writer.write(`SN.node[${source}].Application.stopSendingTime = ${5 + i * 10 + 10}\n`);
+      // writer.write(`SN.node[${source}].Application.startSendingTime = ${5 + i * 10}\n`);
+      // writer.write(`SN.node[${source}].Application.stopSendingTime = ${5 + i * 10 + 10}\n`);
     }
 
     // sim-time-limit = 25s

@@ -32,7 +32,7 @@ void SimplePairApplication::startup()
 	stopSendingTime = par("stopSendingTime").doubleValue();
 
 	if (isSource) {
-		setTimer(SEND_PACKET, startSendingTime); // 10s of set up
+		setTimer(SEND_PACKET, 10); // 10s of set up
 	}
 	else
 		trace() << "Not sending packets";
@@ -54,9 +54,9 @@ void SimplePairApplication::timerFiredCallback(int index) {
 
             double packetSpacing = 1 / (packetRate * 1024 / 256);
 			if (dataSN < numPacketToSend || numPacketToSend == -1) {
-			    if (simTime().dbl() < stopSendingTime) {
+//			    if (simTime().dbl() < stopSendingTime) {
                     setTimer(SEND_PACKET, packetSpacing);
-			    }
+//			    }
 			}
 			break;
 		}
