@@ -52,11 +52,11 @@ void SimplePairApplication::timerFiredCallback(int index) {
 			toNetworkLayer(createGenericDataPacket(100, dataSN, 256), par("sink"));
 			dataSN++;
 
-      double packetSpacing = 1 / (packetRate * 1024 / 256);
+            double packetSpacing = 1 / (packetRate * 1024 / 256);
 			if (dataSN < numPacketToSend || numPacketToSend == -1) {
-			  if (simTime().dbl() < stopSendingTime) {
-          setTimer(SEND_PACKET, packetSpacing);
-			  }
+			    if (simTime().dbl() < stopSendingTime) {
+                    setTimer(SEND_PACKET, packetSpacing);
+			    }
 			}
 			break;
 		}

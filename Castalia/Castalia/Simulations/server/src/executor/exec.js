@@ -118,7 +118,10 @@ function exec({config, sessionId}) {
 
 
     if (mode === "debug") {
-      writer.write(`SN.node[*].Application.numPacketToSend = 1`)
+      writer.write(`SN.node[*].Application.numPacketToSend = 1\n`)
+      writer.write(`SN.isDebugMode = true\n`)
+    } else {
+      writer.write(`SN.isDebugMode = false\n`)
     }
 
     writer.end();

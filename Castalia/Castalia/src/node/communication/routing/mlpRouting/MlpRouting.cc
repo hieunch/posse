@@ -207,7 +207,7 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
   }
 
   if (self == 787) {
-    debugPolygon(hole, "#8d168f");
+//    debugPolygon(hole, "#8d168f");
 //    debugPolygon(convexHull, "#8d168f");
 
 //    findPathOutCavern(GlobalLocationService::getLocation(1622),
@@ -289,6 +289,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
       tie(path, outDelta, aroundHoleRadius, inDelta) = findPath(selfLocation,
         destLocation, hole, caverns);
       findPathCache[make_tuple(selfLocation, destLocation, outDelta, aroundHoleRadius, inDelta)] = path;
+      debugPath(path, "red");
       pkt->setOutDelta(outDelta);
       pkt->setAroundHoleRadius(aroundHoleRadius);
       pkt->setInDelta(inDelta);
@@ -313,7 +314,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
 
@@ -345,7 +346,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -396,7 +397,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
           }
         }
         if (nextHop != -1) {
-//          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(MLP_ROLLINGBALL_ROUTING);
@@ -426,7 +427,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-//            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -525,7 +526,7 @@ vector<Point> MlpRouting::findPathOutCavern(Point from, Point to, vector<Point> 
   double baseK = G::distance(cavern[0], cavern[cavern.size() - 1]) / 8;
   vector<Point> interiorCavern = G::rollBallCavern(cavern, baseK);
 
-  debugPolygon(interiorCavern, "red");
+//  debugPolygon(interiorCavern, "red");
   vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
 
   // gate
