@@ -73,7 +73,11 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 	// --------------
 
 	netPacket->getNetMacInfoExchange().nextHop = destination;
-	send(netPacket, "toMacModule");
+//	send(netPacket, "toMacModule");
+    cModule* desModule = getParentModule()->getParentModule()->getParentModule()->getSubmodule("node", destination)
+        ->getSubmodule("Communication")->getSubmodule("Routing");
+//    cGate* gate = desModule->getSubmodule("Communication")->getSubmodule("Routing")->gate("fromMacModule");
+    sendDirect(netPacket, desModule, "fromDirect");
 }
 
 void VirtualRouting::toApplicationLayer(cMessage * msg)

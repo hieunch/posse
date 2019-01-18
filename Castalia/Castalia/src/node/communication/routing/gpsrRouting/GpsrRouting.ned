@@ -20,5 +20,6 @@ simple GpsrRouting like node.communication.routing.iRouting {
 	input fromCommunicationModule;
 	input fromMacModule;
 	input fromCommModuleResourceMgr;
+    input fromDirect @directIn;
 }
 

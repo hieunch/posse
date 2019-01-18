@@ -16,5 +16,6 @@ simple ShortestPathRouting like node.communication.routing.iRouting {
 	input fromCommunicationModule;
 	input fromMacModule;
 	input fromCommModuleResourceMgr;
+    input fromDirect @directIn;
 }
 
