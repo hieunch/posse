@@ -206,8 +206,8 @@ void MlpRouting::processHole(DiscoverHolePacket* pkt) {
     propagateHole(pkt);
   }
 
-  if (self == 787) {
-//    debugPolygon(hole, "#8d168f");
+  if (self == 731) {
+    debugPolygon(hole, "#8d168f");
 //    debugPolygon(convexHull, "#8d168f");
 
 //    findPathOutCavern(GlobalLocationService::getLocation(1622),
