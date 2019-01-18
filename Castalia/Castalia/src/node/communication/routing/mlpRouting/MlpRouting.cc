@@ -10,12 +10,6 @@ map<tuple<tuple<Point, Point>, Point, Point, int>, vector<Point> > MlpRouting::o
 map<tuple<Point, Point, double>, vector<Point> > MlpRouting::aroundHoleCache;
 map<tuple<Point, Point, int, double, int>, vector<Point> > MlpRouting::findPathCache;
 
-int getRandomNumber(int from, int to) {
-    srand(time(0));
-    int result = from + rand() % (to - from + 1);
-    return result;
-}
-
 void MlpRouting::startup(){
   nextId = 0; // static member
   setTimer(DISCOVER_HOLE_START, 1);

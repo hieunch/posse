@@ -89,6 +89,7 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 	void toMacLayer(cMessage *);
 	void toMacLayer(cPacket *, int);
 	bool isNotDuplicatePacket(cPacket *);
+    int getRandomNumber(int from, int to);
 
 	bool reached(Point location);
 

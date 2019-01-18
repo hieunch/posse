@@ -32,7 +32,7 @@ class StableRouting: public VirtualRouting {
   private:
     static int cnt;
     static int nextId;
-    const int NUM_PATH = 5;
+    const int NUM_PATH = 10;
     double holeDiameter;
     // Parameters
     int StableSetupFrameOverhead;	// in bytes

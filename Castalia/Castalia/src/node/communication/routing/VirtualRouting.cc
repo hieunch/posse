@@ -373,3 +373,11 @@ bool VirtualRouting::reached(Point location) {
 
   return G::distance(selfLocation, location) < RADIO_RANGE;
 }
+
+int VirtualRouting::getRandomNumber(int from, int to) {
+//    srand(time(0));
+//    int result = from + rand() % (to - from + 1);
+//    return result;
+    int result = intrand(to - from + 1) + from;
+    return result;
+}

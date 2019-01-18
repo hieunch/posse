@@ -304,7 +304,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       tie(path, outCavernRadius, aroundHoleRadius, inCavernRadius) = findPath(selfLocation,
         destLocation, hole, caverns);
       findPathCache[make_tuple(selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)] = path;
-//      debugPath(path, "black");
+      debugPath(path, "red");
 //      for (auto p: path) {
 //        debugPoint(p, "black");
 //      }
@@ -605,7 +605,7 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   vector<Point> inCavern = {};
   Point newFrom = from, newTo = to;
 
-  int pathNum = (rand() % NUM_PATH + 1);
+  int pathNum = getRandomNumber(1, NUM_PATH);
 
   for (auto cavern: caverns) {
     if (G::pointInOrOnPolygon(cavern, from)) {

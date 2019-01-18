@@ -31,7 +31,7 @@ class MlpRouting: public VirtualRouting {
   private:
     static int cnt;
     static int nextId;
-    const int RANGE = 2;
+    const int RANGE = 5;
     double holeDiameter;
     // Parameters
     int MlpSetupFrameOverhead;	// in bytes
