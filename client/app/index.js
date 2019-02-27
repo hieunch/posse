@@ -39,10 +39,90 @@ let printStat = (data) => {
   console.log(stat)
 };
 
-$('#result').hide();
-$('#option-panel').hide();
-// $('#graph-container').hide();
-// let width = 1200, height = 1200;
+let handleStatistics = (datas) => {
+  $('#option-panel').show();
+  $('#show-result').off('change');
+  let on = false;
+  $('#show-result').change(() => {
+    on = !on;
+    if (on) {
+      $('#result').show();
+      $('#graph-container').hide();
+    } else {
+      $('#result').hide();
+      $('#graph-container').show();
+    }
+  });
+
+  let max = datas.reduce((acc, val) => {
+    return Math.max(acc,
+      val.data.reduce((acc, node) => Math.max(acc, node.energyConsumed), 0));
+  }, 0);
+  datas.forEach((result, i) => {
+    let {routingAlgorithm, data, numTraffic} = result;
+    $('#result').append(`<div id="result${i}"></div>`);
+    let outterDiv = $(`#result${i}`);
+    outterDiv.append(`<p>${routingAlgorithm}</p>`);
+    outterDiv.append(`<canvas id="canvas${i}">${routingAlgorithm}</canvas>`);
+    $(`#canvas${i}`).attr('width', width + 100).attr('height', height + 100);
+    let heat = simpleheat(`canvas${i}`);
+    heat.gradient({
+      0.4: 'blue',
+      0.6: 'cyan',
+      0.7: 'lime',
+      0.8: 'yellow',
+      1.0: 'red'
+    });
+
+    let thresholdMax = 450;
+    let thresholdDraw = 80;
+    let additive = thresholdMax / 5;
+    heat.max(thresholdMax);
+    heat.data(data
+    // .filter(({totalPacketReceived}) => totalPacketReceived > 0)
+      .map(({x, y, totalPacketReceived, energyConsumed}) => {
+        let res = 0;
+        if (totalPacketReceived > thresholdDraw) res = Math.min(thresholdMax, totalPacketReceived);
+        else if (totalPacketReceived > 5) res = totalPacketReceived + additive;
+        else res = 0;
+        return [x + 50, y + 50, res]
+      }));
+    heat.draw();
+
+    let sortedLifetime = data.map(({estimateLifetime}) => estimateLifetime).sort();
+    let lifeTime = sortedLifetime[0] * 24;
+    let shortestPathRatioData = data.filter(({sumHopRatio, endPointCount}) => endPointCount > 0);
+    let shortestPathRatio = (
+      shortestPathRatioData
+        .map(a => a.sumHopRatio)
+        .reduce((acc, val) => acc + val, 0)
+    ) / (
+      shortestPathRatioData
+        .map(a => a.endPointCount)
+        .reduce((acc, val) => acc + val, 0)
+    );
+
+
+    let numPacketReceiveds = data.map(x => x.totalPacketReceived);
+    let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
+    let numPacketReceiveds1 = data.map(x => x.totalPacketReceived).filter(x => x > 0);
+    let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
+
+    outterDiv.append(`<p>Estimated Life time: ${lifeTime} hours</p>`);
+    outterDiv.append(`<p>Shortest path ratio: ${shortestPathRatio}</p>`);
+    outterDiv.append(`<p>Number of communication sessions: ${numTraffic}</p>`);
+    outterDiv.append(`<p>Blalancing Index: ${BI}</p>`);
+    outterDiv.append(`<p>Blalancing Index 1: ${BI1}</p>`);
+
+  });
+
+};
+
+// $('#result').hide();
+// $('#option-panel').hide();
+$('#graph-container').hide();
+let width = 1200, height = 1200;
+handleStatistics([data]);
 
 
 
@@ -62,8 +142,8 @@ const generateNodes = ({width, height, V}) => {
     for (let j = 0; j < nCellHeight; j++) {
       let startX = cellWidth * i;
       let startY = cellHeight * j;
-      const x = Math.random() * cellWidth * 0.75 + startX + cellWidth * 0.125;
-      const y = Math.random() * cellHeight * 0.75 + startY + cellHeight * 0.125;
+      const x = Math.random() * cellWidth * 0.7 + startX + cellWidth * 0.15;
+      const y = Math.random() * cellHeight * 0.7 + startY + cellHeight * 0.15;
       nodes.push({x, y, id: nextId});
       nextId++;
     }
@@ -237,81 +317,6 @@ function init({nodes, width, height, range}) {
     $('#traffic-input').val(traffics.join('\n'));
   });
 
-  let handleStatistics = (datas) => {
-    $('#option-panel').show();
-    $('#show-result').off('change');
-    let on = false;
-    $('#show-result').change(() => {
-      on = !on;
-      if (on) {
-        $('#result').show();
-        $('#graph-container').hide();
-      } else {
-        $('#result').hide();
-        $('#graph-container').show();
-      }
-    });
-
-    let max = datas.reduce((acc, val) => {
-      return Math.max(acc,
-        val.data.reduce((acc, node) => Math.max(acc, node.totalPacketReceived), 0));
-    }, 0);
-    datas.forEach((result, i) => {
-      let {routingAlgorithm, data, numTraffic} = result;
-      $('#result').append(`<div id="result${i}"></div>`);
-      let outterDiv = $(`#result${i}`);
-      outterDiv.append(`<p>${routingAlgorithm}</p>`);
-      outterDiv.append(`<canvas id="canvas${i}">${routingAlgorithm}</canvas>`);
-      $(`#canvas${i}`).attr('width', width + 100).attr('height', height + 100);
-      let heat = simpleheat(`canvas${i}`);
-      heat.gradient({
-        0.4: 'blue',
-        0.6: 'cyan',
-        0.7: 'lime',
-        0.8: 'yellow',
-        1.0: 'red'
-      });
-
-      heat.max(220);
-      heat.data(data
-      // .filter(({totalPacketReceived}) => totalPacketReceived > 0)
-        .map(({x, y, totalPacketReceived}) => {
-          let res = 0;
-          if (totalPacketReceived > 45) res = Math.min(220, totalPacketReceived);
-          else if (totalPacketReceived > 5) res = totalPacketReceived + 30;
-          else res = 0;
-          return [x + 50, y + 50, res]
-        }));
-      heat.draw();
-
-      let sortedLifetime = data.map(({estimateLifetime}) => estimateLifetime).sort();
-      let lifeTime = sortedLifetime[0] * 24;
-      let shortestPathRatioData = data.filter(({sumHopRatio, endPointCount}) => endPointCount > 0);
-      let shortestPathRatio = (
-        shortestPathRatioData
-          .map(a => a.sumHopRatio)
-          .reduce((acc, val) => acc + val, 0)
-      ) / (
-        shortestPathRatioData
-          .map(a => a.endPointCount)
-          .reduce((acc, val) => acc + val, 0)
-      );
-
-
-      let numPacketReceiveds = data.map(x => x.totalPacketReceived);
-      let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
-      let numPacketReceiveds1 = data.map(x => x.totalPacketReceived).filter(x => x > 0);
-      let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
-
-      outterDiv.append(`<p>Estimated Life time: ${lifeTime} hours</p>`);
-      outterDiv.append(`<p>Shortest path ratio: ${shortestPathRatio}</p>`);
-      outterDiv.append(`<p>Number of communication sessions: ${numTraffic}</p>`);
-      outterDiv.append(`<p>Blalancing Index: ${BI}</p>`);
-      outterDiv.append(`<p>Blalancing Index 1: ${BI1}</p>`);
-
-    });
-
-  };
 
   let submitReal = () => {
     // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
