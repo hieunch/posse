@@ -104,7 +104,7 @@ let handleStatistics = (datas, width, height) => {
     console.log(max);
     // specify options
     var options = {
-      width:  `${width + 50}px`,
+      width: `${width + 50}px`,
       height: `${height + 50}px`,
       zMax: max + 5,
       style: 'dot-line',
@@ -136,9 +136,9 @@ let handleStatistics = (datas, width, height) => {
 
 
     let numPacketReceiveds = data.map(x => x.totalPacketReceived);
-    let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
+    let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
     let numPacketReceiveds1 = data.map(x => x.totalPacketReceived).filter(x => x > 0);
-    let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
+    let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
 
     outterDiv.append(`<p>Estimated Life time: ${lifeTime} hours</p>`);
     outterDiv.append(`<p>Shortest path ratio: ${shortestPathRatio}</p>`);
@@ -150,13 +150,11 @@ let handleStatistics = (datas, width, height) => {
 
 };
 
-// $('#result').hide();
-// $('#option-panel').hide();
-$('#graph-container').hide();
-let width = 1200, height = 1200;
-handleStatistics([data, data1], width, height);
-
-
+$('#result').hide();
+$('#option-panel').hide();
+// $('#graph-container').hide();
+// let width = 1200, height = 1200;
+// handleStatistics([data, data1], width, height);
 
 
 const generateNodes = ({width, height, V}) => {
@@ -170,12 +168,14 @@ const generateNodes = ({width, height, V}) => {
   let cellWidth = width / nCellWidth;
   let cellHeight = height / nCellHeight;
 
+  console.log("ahihi");
+
   for (let i = 0; i < nCellWidth; i++) {
     for (let j = 0; j < nCellHeight; j++) {
       let startX = cellWidth * i;
       let startY = cellHeight * j;
-      const x = Math.random() * cellWidth * 0.7 + startX + cellWidth * 0.15;
-      const y = Math.random() * cellHeight * 0.7 + startY + cellHeight * 0.15;
+      const x = Math.random() * cellWidth * 0.6 + startX + cellWidth * 0.2;
+      const y = Math.random() * cellHeight * 0.6 + startY + cellHeight * 0.2;
       nodes.push({x, y, id: nextId});
       nextId++;
     }
@@ -230,6 +230,7 @@ function init({nodes, width, height, range}) {
     $('#export-btn').off('click');
     $('#submit-btn').off('click');
     $('#reset-btn').off('click');
+    $('#addpair-btn').off('click');
   }
 
   $('#height-input').val(height.toString());
@@ -258,32 +259,39 @@ function init({nodes, width, height, range}) {
     });
   };
 
+  let traffic = [];
 
-  let trafficLines = [];
+  $('#addpair-btn').click(() => {
+    let pair = {
+      source: null,
+      destination: null,
+      numPacket: 1,
+      rate: 1000,
+    };
 
-  $('#traffic-input').change((e) => {
-    trafficLines.forEach(l => l.remove());
-    trafficLines = [];
-    let traffic = $('#traffic-input').val().split('\n').map(str => {
-      const regex = /(\d+)->(\d+)/;
-      const match = regex.exec(str);
-      if (match)
-        return {
-          source: parseInt(match[1]),
-          destination: parseInt(match[2]),
-        };
-      else {
-        return null;
+
+    let listener = (node) => {
+      let color = '#5590ff';
+      network.drawHalo({
+        x: node.x, y: node.y, radius: 10, color: color
+      });
+      if (pair.source === null) {
+        pair.source = node.id;
+      } else {
+        pair.destination = node.id;
+        traffic.push(pair);
+        network.drawArrow({
+          from: network.nodes[pair.source],
+          to: network.nodes[pair.destination],
+          style: {width: '0.5', color: color}
+        })
+        network.removeNodeClickListener(listener);
       }
-    }).filter(_ => _ !== null);
+    };
 
-    traffic = traffic || [];
-
-    traffic.forEach(({source, destination}) => {
-      let from = network.nodes[source], to = network.nodes[destination];
-      trafficLines = trafficLines.concat(network.drawArrow({from, to, style: {width: '0.5', color: 'green'}}));
-    })
+    network.addNodeClickListener(listener);
   });
+
 
   let genTraffic = (numPair) => {
     let A = network.getA();
@@ -303,11 +311,10 @@ function init({nodes, width, height, range}) {
 
     return res;
   };
-
   let addTraffic = (base, numAdded) => {
 
     let res = [];
-    for (let i = 0; i < base.length; i ++){
+    for (let i = 0; i < base.length; i++) {
       res.push(base[i]);
     }
 
@@ -327,28 +334,6 @@ function init({nodes, width, height, range}) {
 
     return res;
   };
-  $('#traffic-generate-btn').click(() => {
-    let V = network.nodes.length;
-    let numPair = $('#num-traffic-input').val();
-
-
-    trafficLines.forEach(l => l.remove());
-    trafficLines = [];
-    let traffics = [];
-    let A = network.getA();
-    let B = network.getB();
-    for (let i = 0; i < numPair; i++) {
-      let fromId = A[Math.floor(Math.random() * A.length)].id;
-      let toId = B[Math.floor(Math.random() * B.length)].id;
-      let from = network.nodes[fromId], to = network.nodes[toId];
-      traffics.push(`${fromId}->${toId}`);
-      trafficLines = trafficLines.concat(network.drawArrow({from, to, style: {width: '1', color: 'green'}}));
-    }
-
-
-    $('#traffic-input').val(traffics.join('\n'));
-  });
-
 
   let submitReal = () => {
     // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
@@ -450,28 +435,11 @@ function init({nodes, width, height, range}) {
     };
     makeRequest();
   };
-
   $('#submit-btn').click(() => {
     $('#result').hide();
     $('#option-panel').hide();
     let mode = $('#mode-input').val();
     if (mode === "debug") {
-      let traffic = $('#traffic-input').val().split('\n').map(str => {
-        const regex = /(\d+)->(\d+)/;
-        const match = regex.exec(str);
-        if (match)
-          return {
-            source: parseInt(match[1]),
-            destination: parseInt(match[2]),
-            numPacket: 1,
-            rate: 1000,
-          };
-        else {
-          return null;
-        }
-      }).filter(_ => _ !== null);
-
-      traffic = traffic || [];
       const routingAlgorithm = $('#ra-input').val();
       let data = {
         network: {
