@@ -10,8 +10,6 @@ import FileSaver from 'file-saver';
 import SVGtoPNG from 'save-svg-as-png';
 import distanceToLineSegment from 'distance-to-line-segment';
 import simpleheat from 'simpleheat';
-import data from './data'
-import data1 from './data1'
 import vis from 'vis';
 
 
@@ -231,7 +229,32 @@ function init({nodes, width, height, range}) {
     $('#submit-btn').off('click');
     $('#reset-btn').off('click');
     $('#addpair-btn').off('click');
+    $('#addregionpair-btn').off('click');
   }
+
+  let mode = $('#mode-input').val();
+  if (mode === "debug") {
+    $('#addregionpair-btn').hide();
+    $('#traffic-input').hide();
+    $('#addpair-btn').show();
+  } else {
+    $('#addregionpair-btn').show();
+    $('#traffic-input').show();
+    $('#addpair-btn').hide();
+  }
+  $('#mode-input').change(e => {
+    let mode = e.target.value;
+    if (mode === "debug") {
+      $('#addregionpair-btn').hide();
+      $('#traffic-input').hide();
+      $('#addpair-btn').show();
+    } else {
+      $('#addregionpair-btn').show();
+      $('#traffic-input').show();
+      $('#addpair-btn').hide();
+    }
+  });
+
 
   $('#height-input').val(height.toString());
   $('#width-input').val(width.toString());
@@ -260,8 +283,14 @@ function init({nodes, width, height, range}) {
   };
 
   let traffic = [];
-
   $('#addpair-btn').click(() => {
+    let mode = $('#mode-input').val();
+
+    if (mode === "real") {
+      alert("not applicable in real mode!")
+      return;
+    }
+
     let pair = {
       source: null,
       destination: null,
@@ -292,24 +321,154 @@ function init({nodes, width, height, range}) {
     network.addNodeClickListener(listener);
   });
 
+  let regionTraffic = {}; // {from: {1, 2, 3}, to: {4, 5, 6}}
+  let regionTrafficCount = 0;
+  $('#addregionpair-btn').click(() => {
 
-  let genTraffic = (numPair) => {
-    let A = network.getA();
-    let B = network.getB();
-    let res = [];
-    while (res.length < numPair) {
-      let fromId = A[Math.floor(Math.random() * A.length)].id;
-      let toId = B[Math.floor(Math.random() * B.length)].id;
+    let mode = $('#mode-input').val();
+    if (mode === "debug") {
+      alert("not applicable in debug mode!");
+      return;
+    }
 
-      if (!res.find(x => x.source === fromId || x.destination === toId)) {
-        res.push({
-          source: fromId,
-          destination: toId,
-        })
+
+    regionTrafficCount++;
+    let doneA = false;
+    let doneB = false;
+    let isDowning = false;
+    let polylineA = null;
+    let polylineB = null;
+    network.draw.panZoom(false);
+
+    let mousedownListener = ({x, y}) => {
+      if (polylineA === null && polylineB === null) {
+        polylineA = network.selectLayer.polyline([x, y]).fill('#dfffd6').stroke({width: 0.5});
+        isDowning = true;
+      } else if (polylineA !== null && polylineB === null) {
+        polylineB = network.selectLayer.polyline([x, y]).fill('#cfd4ff').stroke({width: 0.5});
+        isDowning = true;
+      }
+    };
+
+    let mousemoveListener = ({x, y}) => {
+      if (isDowning) {
+        if (polylineA != null && !doneA) {
+          polylineA.plot(polylineA.array().value.concat([[x, y]])).fill('#dfffd6').stroke({width: 0.5});
+        } else if (polylineB != null && !doneB) {
+          polylineB.plot(polylineB.array().value.concat([[x, y]])).fill('#cfd4ff').stroke({width: 0.5});
+        }
+      }
+    };
+
+    let mouseupListener = () => {
+      isDowning = false;
+      if (polylineA != null && !doneA) {
+        doneA = true;
+      } else if (polylineB != null && !doneB) {
+        doneB = true;
+
+        let regionA = network.nodes.filter(node => {
+          return inPolygon([node.x, node.y], polylineA.array().value)
+        });
+        let regionB = network.nodes.filter(node => {
+          return inPolygon([node.x, node.y], polylineB.array().value)
+        });
+
+        let centerA = regionA.reduce((acc, val) => {
+          return {
+            x: acc.x + val.x,
+            y: acc.y + val.y,
+          }
+        }, {x: 0, y: 0});
+        centerA.x = centerA.x / regionA.length;
+        centerA.y = centerA.y / regionA.length;
+        let centerB = regionB.reduce((acc, val) => {
+          return {
+            x: acc.x + val.x,
+            y: acc.y + val.y,
+          }
+        }, {x: 0, y: 0});
+        centerB.x = centerB.x / regionB.length;
+        centerB.y = centerB.y / regionB.length;
+
+        network.drawText({text: regionTrafficCount.toString(), x: centerA.x, y: centerA.y});
+        network.drawText({text: regionTrafficCount.toString(), x: centerB.x, y: centerB.y});
+        network.drawArrow(({from: centerA, to: centerB, style: {color: 'red', width: '1'}}));
+
+
+        regionTraffic[regionTrafficCount] = {
+          from: regionA.map(_ => _.id),
+          to: regionB.map(_ => _.id),
+        };
+
+
+        let trafficText = Object.keys(regionTraffic).map(_ => _ + ":").join("\n");
+        $('#traffic-input').val(trafficText);
+
+        network.removeMousedownListener(mousedownListener);
+        network.removeMousemoveListener(mousemoveListener);
+        network.removeMouseupListener(mouseupListener);
+        network.draw.panZoom();
       }
     }
 
-    return res;
+    network.addMousedownListener(mousedownListener);
+    network.addMousemoveListener(mousemoveListener);
+    network.addMouseupListener(mouseupListener);
+  });
+
+  let genTraffic = () => {
+    // let A = network.getA();
+    // let B = network.getB();
+    // let res = [];
+    // while (res.length < numPair) {
+    //   let fromId = A[Math.floor(Math.random() * A.length)].id;
+    //   let toId = B[Math.floor(Math.random() * B.length)].id;
+    //
+    //   if (!res.find(x => x.source === fromId || x.destination === toId)) {
+    //     res.push({
+    //       source: fromId,
+    //       destination: toId,
+    //     })
+    //   }
+    // }
+    //
+    // return res;
+    let trafficGroups = $('#traffic-input').val()
+      .split('\n')
+      .filter(l => {
+        return l && l !== "";
+      })
+      .map(txt => {
+        let [region, numPair] = txt.split(":").map(_ => parseInt(_));
+        return {
+          region, numPair
+        }
+      });
+
+    let result = [];
+    trafficGroups.forEach(({region, numPair}) => {
+      let A = regionTraffic[region].from;
+      let B = regionTraffic[region].to;
+      if (numPair > A.length || numPair > B.length) return;
+      let res = [];
+      while (res.length < numPair) {
+        let fromId = A[Math.floor(Math.random() * A.length)];
+        let toId = B[Math.floor(Math.random() * B.length)];
+
+        if (!res.find(x => x.source === fromId || x.destination === toId)) {
+          res.push({
+            source: fromId,
+            destination: toId,
+          })
+        }
+      }
+
+      result = [...result, ...res];
+    });
+
+    console.log(result);
+    return result;
   };
   let addTraffic = (base, numAdded) => {
 
@@ -337,13 +496,15 @@ function init({nodes, width, height, range}) {
 
   let submitReal = () => {
     // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
-    let algorithms = ['stable', 'mlp'];
+    let algorithms = ['gpsr', 'rollingBall', 'stable', 'mlp'];
     let accData = [];
     let ts = [];
-    ts.push(genTraffic(15));
-    for (let i = 0; i < 0; i++) {
-      ts.push(addTraffic(ts[ts.length - 1], 5));
-    }
+    ts.push(genTraffic());
+
+    // return; // TODO
+    // for (let i = 0; i < 0; i++) {
+    //   ts.push(addTraffic(ts[ts.length - 1], 5));
+    // }
 
     let dateString = (new Date()).getUTCMilliseconds().toString();
 

@@ -167,36 +167,22 @@ class Network {
         isSeleting = true;
         let polyline = this.selectLayer.polyline([x, y]).fill('#ffccca').stroke({width: 0.5});
         polylines.push(polyline);
-      // } else if (state === 'a') {
-      //   isSeleting = true;
-      //   this.polylineA = this.selectLayer.polyline([x, y]).fill('#dfffd6').stroke({width: 0.5});
-      // } else if (state === 'b') {
-      //   isSeleting = true;
-      //   this.polylineB = this.selectLayer.polyline([x, y]).fill('#cfd4ff').stroke({width: 0.5});
       } else if (state === 'm') {
         this.polylineM = this.selectLayer.polyline([x, y]).fill('#f1ceff').stroke({width: 0.5});
       } else {
-        // TODO
+        this.mousedownListeners.forEach(l => l({x, y}));
       }
     });
 
     this.draw.mousemove((e) => {
       let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
       if (state === 'normal') {
+        this.mousemoveListeners.forEach(l => l({x, y}));
       } else if (state === 'deleting') {
         if (isSeleting) {
           let polyline = polylines[polylines.length - 1];
           polyline.plot(polyline.array().value.concat([[x, y]])).fill('#ffccca').stroke({width: 0.5});
         }
-      // } else if (state === 'a') {
-      //   if (isSeleting) {
-      //     this.polylineA.plot(this.polylineA.array().value.concat([[x, y]])).fill('#dfffd6').stroke({width: 0.5});
-      //   }
-      //
-      // } else if (state === 'b') {
-      //   if (isSeleting) {
-      //     this.polylineB.plot(this.polylineB.array().value.concat([[x, y]])).fill('#cfd4ff').stroke({width: 0.5});
-      //   }
       } else if (state === 'm') {
         this.polylineM.plot(this.polylineM.array().value.concat([[x, y]])).fill('#f1ceff').stroke({width: 0.5});
       }
@@ -222,22 +208,23 @@ class Network {
             }
           }
         }
-      // } else if (state === 'a') {
-      //   if (isSeleting) {
-      //     isSeleting = false;
-      //     state = 'normal';
-      //     this.draw.panZoom();
-      //   }
-      // } else if (state === 'b') {
-      //   if (isSeleting) {
-      //     isSeleting = false;
-      //     state = 'normal';
-      //     this.draw.panZoom();
-      //   }
+        // } else if (state === 'a') {
+        //   if (isSeleting) {
+        //     isSeleting = false;
+        //     state = 'normal';
+        //     this.draw.panZoom();
+        //   }
+        // } else if (state === 'b') {
+        //   if (isSeleting) {
+        //     isSeleting = false;
+        //     state = 'normal';
+        //     this.draw.panZoom();
+        //   }
       } else if (state === 'm') {
-        console.log("hehee");
         state = 'normal';
         this.draw.panZoom();
+      } else {
+        this.mouseupListeners.forEach(l => l());
       }
     });
 
@@ -401,9 +388,37 @@ class Network {
     this.nodeClickListeners = this.nodeClickListeners.filter(l => l !== listener);
   }
 
+  addMousedownListener(listener) {
+    this.mousedownListeners.push(listener);
+  }
+
+  removeMousedownListener(listener) {
+    this.mousedownListeners = this.mousedownListeners.filter(l => l !== listener);
+  }
+
+  addMousemoveListener(listener) {
+    this.mousemoveListeners.push(listener);
+  }
+
+  removeMousemoveListener(listener) {
+    this.mousemoveListeners = this.mousemoveListeners.filter(l => l !== listener);
+  }
+
+
+  addMouseupListener(listener) {
+    this.mouseupListeners.push(listener);
+  }
+
+  removeMouseupListener(listener) {
+    this.mouseupListeners = this.mouseupListeners.filter(l => l !== listener);
+  }
 
   drawLine({x1, y1, x2, y2, style}) {
     return this.edgeLayer.line(x1, y1, x2, y2).stroke(style);
+  }
+
+  drawText({text, x, y}) {
+    return this.draw.text(text).move(x, y);
   }
 
   drawCircle({centerX, centerY, radius, style}) {
