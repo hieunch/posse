@@ -11,6 +11,8 @@ import SVGtoPNG from 'save-svg-as-png';
 import distanceToLineSegment from 'distance-to-line-segment';
 import simpleheat from 'simpleheat';
 import data from './data'
+import data1 from './data1'
+import vis from 'vis';
 
 
 let printDetail = (data) => {
@@ -39,7 +41,7 @@ let printStat = (data) => {
   console.log(stat)
 };
 
-let handleStatistics = (datas) => {
+let handleStatistics = (datas, width, height) => {
   $('#option-panel').show();
   $('#show-result').off('change');
   let on = false;
@@ -56,7 +58,7 @@ let handleStatistics = (datas) => {
 
   let max = datas.reduce((acc, val) => {
     return Math.max(acc,
-      val.data.reduce((acc, node) => Math.max(acc, node.energyConsumed), 0));
+      val.data.reduce((acc, node) => Math.max(acc, node.totalPacketReceived), 0));
   }, 0);
   datas.forEach((result, i) => {
     let {routingAlgorithm, data, numTraffic} = result;
@@ -88,6 +90,36 @@ let handleStatistics = (datas) => {
         return [x + 50, y + 50, res]
       }));
     heat.draw();
+    outterDiv.append(`<div id="surface${i}">${routingAlgorithm}</div>`);
+    $(`#surface${i}`).attr('width', width + 100).attr('height', height + 100);
+    var visData = new vis.DataSet();
+    data.forEach(({x, y, id, energyConsumed, totalPacketReceived}) => {
+      let res = 0;
+      if (totalPacketReceived > thresholdDraw) res = totalPacketReceived;
+      else if (totalPacketReceived > 5) res = totalPacketReceived + additive - 5;
+      else res = 0;
+      visData.add({x, y, id, z: res, style: res})
+    });
+
+    console.log(max);
+    // specify options
+    var options = {
+      width:  `${width + 50}px`,
+      height: `${height + 50}px`,
+      zMax: max + 5,
+      style: 'dot-line',
+      showPerspective: true,
+      dotSizeRatio: 0.015,
+      showGrid: true,
+      showShadow: false,
+      keepAspectRatio: true,
+      verticalRatio: 0.5
+    };
+
+    // Instantiate our graph object.
+    var container = document.getElementById(`surface${i}`);
+    var graph3d = new vis.Graph3d(container, visData, options);
+
 
     let sortedLifetime = data.map(({estimateLifetime}) => estimateLifetime).sort();
     let lifeTime = sortedLifetime[0] * 24;
@@ -122,7 +154,7 @@ let handleStatistics = (datas) => {
 // $('#option-panel').hide();
 $('#graph-container').hide();
 let width = 1200, height = 1200;
-handleStatistics([data]);
+handleStatistics([data, data1], width, height);
 
 
 
@@ -402,7 +434,7 @@ function init({nodes, width, height, range}) {
                       accData.push(hahaData);
 
                       if (next === scenes.length - 1) {
-                        handleStatistics(accData);
+                        handleStatistics(accData, width, height);
                       } else {
                         next++;
                         setTimeout(() => makeRequest(), 1000);
