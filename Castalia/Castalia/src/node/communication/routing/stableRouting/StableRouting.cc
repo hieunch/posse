@@ -17,12 +17,12 @@ void StableRouting::startup(){
   receivedHole = false;
 }
 
+
+// Scheduling callback - this function is called whenever we set a timer on a specific time
 void StableRouting::timerFiredCallback(int index){
   switch(index){
     case DISCOVER_HOLE_START: {
-//      debugCircle(selfLocation, RADIO_RANGE,"black");
-
-      // check whether this node is in a hole
+      // check whether this node is on a hole boundary
       double minAngle = 3 * M_PI;
       Point chosenCenter;
       for (auto &n: neighborTable) {
@@ -45,7 +45,7 @@ void StableRouting::timerFiredCallback(int index){
       }
 
       if (!chosenCenter.isUnspecified()) {
-//        debugPoint(selfLocation, "red");
+        // If this node is on a hole boundary, start discovering the hole by sending a packet around it
         Point nextCenter;
         int nextHop = G::findNextHopRollingBall(selfLocation, chosenCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
         if (nextHop != -1) {
@@ -73,6 +73,7 @@ void StableRouting::processBufferedPacket(){
   }
 }
 
+// Handle packet coming from application layer
 void StableRouting::fromApplicationLayer(cPacket * pkt, const char *destination){
 
 
@@ -94,10 +95,6 @@ void StableRouting::fromApplicationLayer(cPacket * pkt, const char *destination)
   dataPacket->setDestLocation(GlobalLocationService::getLocation(atoi(destination)));
   dataPacket->setPacketId(nextId++);
 
-//  return;
-
-//  debugPoint(selfLocation, "red");
-//  debugPoint(dataPacket->getDestLocation(), "green");
   processDataPacket(dataPacket);
 
 }
@@ -146,6 +143,10 @@ void StableRouting::finishSpecific() {
 //  log() << "done man ";
 }
 
+
+
+// Ham xu li ho. Input la goi tin da di duoc dung 1 vong xung quanh ho
+// Nhiem vu: Tim ra cac hang (caverns) trong ho nay va luu lai nham phuc vu cho thuat toan sau nay.
 void StableRouting::processHole(DiscoverHolePacket* pkt) {
 
   Point ballCenter = pkt->getBallCenter();
@@ -161,8 +162,6 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
 
   vector<Point> convexHull = G::convexHull(points);
 
-//  debugPolygon(convexHull, "green");
-//  debugPolygon(points, "blue");
   holeConvexHull = convexHull;
   // check if there is a really significant "cave"
   int pi = 0;
@@ -214,22 +213,12 @@ void StableRouting::processHole(DiscoverHolePacket* pkt) {
 
   if (self == 787) {
     debugPolygon(hole, "#8d168f");
-    debugPolygon(convexHull, "#8d168f");
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 11);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 18);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 25);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 32);
-    findPathOutCavern(GlobalLocationService::getLocation(1622),
-     GlobalLocationService::getLocation(2796), hole, caverns[0], 39);
   }
 
 }
 
-
+// Nhan 1 goi tin DiscoverHolePacket nham xac dinh duong bien ho
+// Nhiem vu: Xac dinh next hop - node tiep theo nam tren duong bien ho - va gui goi tin nay den node do bang goi ham toMacLayer(nextHop, pkt)
 void StableRouting::processDiscoverHolePacket(DiscoverHolePacket* pkt){
   string dst(pkt->getDestination());
   string src(pkt->getSource());
@@ -266,9 +255,7 @@ void StableRouting::processDiscoverHolePacket(DiscoverHolePacket* pkt){
     if (path.size() >= 2) {
       if (path[0] == self && path[1] == nextHop) {
         if (path.size() > 20) {
-          // TODO
           processHole(pkt);
-//          propagateHole(pkt);
         }
         return;
       }
@@ -285,7 +272,8 @@ void StableRouting::processDiscoverHolePacket(DiscoverHolePacket* pkt){
 
 }
 
-
+// Ham phat tan thong tin ho
+// Nhiem vu: Broadcast goi tin co chua thong tin ho
 void StableRouting::propagateHole(DiscoverHolePacket *pkt) {
 //  debugPoint(selfLocation, "red");
   DiscoverHolePacket *dup = pkt->dup();
@@ -293,6 +281,9 @@ void StableRouting::propagateHole(DiscoverHolePacket *pkt) {
   toMacLayer(dup, BROADCAST_MAC_ADDRESS);
 }
 
+
+// Ham chinh': Xu li dinh tuyen. Input la goi tin StablePacket
+// Nhiem vu: Dua vao thuat toan dinh tuyen de xac dinh next hop va forward goi tin nay den node do.
 void StableRouting::processDataPacket(StablePacket* pkt){
 //  debugPoint(selfLocation, "green");
   Point destLocation = pkt->getDestLocation();
@@ -305,11 +296,6 @@ void StableRouting::processDataPacket(StablePacket* pkt){
         destLocation, hole, caverns);
       findPathCache[make_tuple(selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)] = path;
       debugPath(path, "red");
-//      for (auto p: path) {
-//        debugPoint(p, "black");
-//      }
-
-//      for (auto p: path) debugPoint(p, "green");
       pkt->setOutCavernRadius(outCavernRadius);
       pkt->setAroundHoleRadius(aroundHoleRadius);
       pkt->setInCavernRadius(inCavernRadius);
@@ -463,14 +449,16 @@ Point StableRouting::getNeighborLocation(int id) {
 
   return Point(); // default
 }
-// will handle interaction between the application layer and the GPRS module in order to pass parameters such as
-// the node's position
+
+
 void StableRouting::handleNetworkControlCommand(cMessage *msg) {
 
 }
 
 
-
+// Tim duong di ra khoi hang
+// Input: Diem nguon from nam trong ho cavern
+// Diem dich "to" nam ngoai hang va ban kinh bong lan ballRadius
 vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Point> &hole,
                                 vector<Point> &cavern, double ballRadius) {
 
@@ -535,11 +523,7 @@ vector<Point> StableRouting::findPathAroundHole(Point from, Point to, vector<Poi
 
 
   vector<Point> convexHull = G::convexHull(hole);
-//  debugPolygon(convexHull, "purple");
-//  debugPolygon(hole, "red");
-  // assume none of from and to is inside the convex hull
   vector<Point> balledConvexHull = G::rollBallPolygon(convexHull, ballRadius);
-//  debugPolygon(balledConvexHull, "gray");
   vector<Point> res;
   auto closestFrom = from, closestTo = to;
   if (G::pointInOrOnPolygon(balledConvexHull, from)) {
@@ -574,8 +558,11 @@ vector<Point> StableRouting::findPathAroundHole(Point from, Point to, vector<Poi
   return flattenResult;
 }
 
+// Ham tim duong di cho thuat toan Stable
+// Input la diem dich from, diem nguon to
+// Ho' hole, list cac caverns
+// Dau ra la tuple (path, outCavernRadius, aroundHoleRadius, outCavernRadius)
 tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from, Point to, vector<Point> &hole, vector<vector<Point>> &caverns) {
-  log() << "ahihi hi";
   vector<Point> result;
   double inCavernRadius = -1;
   double outCavernRadius = -1;
@@ -612,7 +599,6 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
       double maxRadius = G::distance(cavern[0], cavern[cavern.size() - 1]) / 4;
       outCavernRadius = pathNum * (maxRadius / NUM_PATH);
       outCavern = findPathOutCavern(from, to, hole, cavern, outCavernRadius);
-//      debugPolygon(G::rollBallCavern(cavern, outCavernRadius), "green");
       newFrom = outCavern[outCavern.size() - 1];
       break;
     }
@@ -623,7 +609,6 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
       double maxRadius = G::distance(cavern[0], cavern[cavern.size() - 1]) / 4;
       inCavernRadius = pathNum * (maxRadius / NUM_PATH);
       inCavern = findPathOutCavern(to, from, hole, cavern, inCavernRadius);
-//      debugPolygon(G::rollBallCavern(cavern, inCavernRadius), "green");
       reverse(inCavern.begin(), inCavern.end());
       newTo = inCavern[0];
       break;
@@ -637,16 +622,7 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   double maxRadius = 5 * log2(holeDiameter);
   aroundHoleRadius = pathNum * (maxRadius / NUM_PATH);
   vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
-//  debugPolygon(G::rollBallPolygon(G::convexHull(hole), aroundHoleRadius), "purple");
 
-//  debugPath(middlePath, "green");
-//  debugPath(inCavern, "blue");
-//  if (outCavern.size() > 0) {
-//    debugPath(outCavern, "red");
-//    for (auto p: outCavern) debugPoint(p, "red");
-//  }
-//  for (auto p: middlePath) debugPoint(p, "green");
-//  for (auto p: inCavern) debugPoint(p, "blue");
 
   result.insert(result.end(), outCavern.begin(), outCavern.end());
   result.insert(result.end(), middlePath.begin(), middlePath.end());
