@@ -94,19 +94,19 @@ const findBallCenter = ({node, ballDiameter}) => {
   }
 };
 
-function findCenterOnClick({nodes, ballDiameter, onFindCenter}) {
-  nodes.forEach(node => {
-    node.circle.off('click');
-    node.circle.click((e) => {
-      let center = findBallCenter({node, ballDiameter});
-      if (center) {
-        onFindCenter({center, node});
-      }
-    })
-  });
-
-  return nodes;
-}
+// function findCenterOnClick({nodes, ballDiameter, onFindCenter}) {
+//   nodes.forEach(node => {
+//     node.circle.off('click');
+//     node.circle.click((e) => {
+//       let center = findBallCenter({node, ballDiameter});
+//       if (center) {
+//         onFindCenter({center, node});
+//       }
+//     })
+//   });
+//
+//   return nodes;
+// }
 
 function rotateVectorCCW({x, y, angle}) {
   return {
@@ -134,6 +134,10 @@ class Network {
     this.width = width;
     this.height = height;
     this.range = range;
+    this.nodeClickListeners = [];
+    this.mousedownListeners = [];
+    this.mousemoveListeners = [];
+    this.mouseupListeners = [];
 
     this.svg = this.draw.node;
     this.selectLayer = this.draw.group();
@@ -147,64 +151,40 @@ class Network {
         .center(node.x, node.y)
         .fill('#b7b7b7');
       node.circle.click(() => {
-        console.log(node);
+        this.nodeClickListeners.forEach(listener => listener(node))
       })
     });
 
     processNeighbors({nodes, range});
-    // findCenterOnClick({
-    //   nodes, ballDiameter: range, onFindCenter: ({center}) => {
-    //     this.haloLayer
-    //       .circle(range)
-    //       .center(center.x, center.y)
-    //       .fill('none')
-    //       .stroke({color: '#32ffc2', width: 0.5})
-    //   }
-    // });
-
-
     let state = 'normal';
     let isSeleting = false;
     let polylines = [];
 
 
     this.draw.mousedown((e) => {
+      let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
       if (state === 'deleting') {
         isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
         let polyline = this.selectLayer.polyline([x, y]).fill('#ffccca').stroke({width: 0.5});
         polylines.push(polyline);
-      } else if (state === 'a') {
-        isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
-        this.polylineA = this.selectLayer.polyline([x, y]).fill('#dfffd6').stroke({width: 0.5});
-      } else if (state === 'b') {
-        isSeleting = true;
-        let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
-        this.polylineB = this.selectLayer.polyline([x, y]).fill('#cfd4ff').stroke({width: 0.5});
+      } else if (state === 'm') {
+        this.polylineM = this.selectLayer.polyline([x, y]).fill('#f1ceff').stroke({width: 0.5});
+      } else {
+        this.mousedownListeners.forEach(l => l({x, y}));
       }
     });
 
     this.draw.mousemove((e) => {
+      let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
       if (state === 'normal') {
+        this.mousemoveListeners.forEach(l => l({x, y}));
       } else if (state === 'deleting') {
         if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
           let polyline = polylines[polylines.length - 1];
           polyline.plot(polyline.array().value.concat([[x, y]])).fill('#ffccca').stroke({width: 0.5});
         }
-      } else if (state === 'a') {
-        if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
-          this.polylineA.plot(this.polylineA.array().value.concat([[x, y]])).fill('#dfffd6').stroke({width: 0.5});
-        }
-
-      } else if (state === 'b') {
-        if (isSeleting) {
-          let {x, y} = originPosition({x: e.clientX, y: e.clientY, svg: this.svg});
-          this.polylineB.plot(this.polylineB.array().value.concat([[x, y]])).fill('#cfd4ff').stroke({width: 0.5});
-        }
-
+      } else if (state === 'm') {
+        this.polylineM.plot(this.polylineM.array().value.concat([[x, y]])).fill('#f1ceff').stroke({width: 0.5});
       }
 
     });
@@ -228,18 +208,23 @@ class Network {
             }
           }
         }
-      } else if (state === 'a') {
-        if (isSeleting) {
-          isSeleting = false;
-          state = 'normal';
-          this.draw.panZoom();
-        }
-      } else if (state === 'b') {
-        if (isSeleting) {
-          isSeleting = false;
-          state = 'normal';
-          this.draw.panZoom();
-        }
+        // } else if (state === 'a') {
+        //   if (isSeleting) {
+        //     isSeleting = false;
+        //     state = 'normal';
+        //     this.draw.panZoom();
+        //   }
+        // } else if (state === 'b') {
+        //   if (isSeleting) {
+        //     isSeleting = false;
+        //     state = 'normal';
+        //     this.draw.panZoom();
+        //   }
+      } else if (state === 'm') {
+        state = 'normal';
+        this.draw.panZoom();
+      } else {
+        this.mouseupListeners.forEach(l => l());
       }
     });
 
@@ -249,17 +234,76 @@ class Network {
         this.draw.panZoom(false)
       }
     });
-    Mousetrap.bind(['command+a', 'ctrl+shift+a'], () => {
+    // Mousetrap.bind(['command+a', 'ctrl+shift+a', 'ctrl+alt+a'], () => {
+    //   if (state === 'normal') {
+    //     state = 'a';
+    //     this.draw.panZoom(false)
+    //   }
+    // });
+    // Mousetrap.bind(['command+b', 'ctrl+shift+b', 'ctrl+alt+b'], () => {
+    //   if (state === 'normal') {
+    //     state = 'b';
+    //     this.draw.panZoom(false)
+    //   }
+    // });
+
+    Mousetrap.bind(['command+k', 'ctrl+shift+k'], () => {
       if (state === 'normal') {
-        state = 'a';
+        state = 'm';
         this.draw.panZoom(false)
       }
     });
-    Mousetrap.bind(['command+b', 'ctrl+shift+b'], () => {
-      if (state === 'normal') {
-        state = 'b';
-        this.draw.panZoom(false)
+
+    Mousetrap.bind(['enter', 'ctrl+enter'], () => {
+      let points = this.polylineM.array().value;
+      let minX = points.reduce((acc, val) => {
+        return Math.min(acc, val[0])
+      }, 1e9);
+      let maxX = points.reduce((acc, val) => {
+        return Math.max(acc, val[0])
+      }, -1e9);
+      let minY = points.reduce((acc, val) => {
+        return Math.min(acc, val[1])
+      }, 1e9);
+      let maxY = points.reduce((acc, val) => {
+        return Math.max(acc, val[1])
+      }, -1e9);
+
+      let num = parseInt(prompt("Number of node added?"));
+      let currentId = this.nodes.reduce((acc, val) => Math.max(acc, val.id), 0);
+
+      for (let i = 0; i < num; i++) {
+        const x = Math.random() * (maxX - minX) + minX;
+        const y = Math.random() * (maxY - minY) + minY;
+        if (inPolygon([x, y], points)) {
+          currentId++;
+          let node = {
+            x, y, id: currentId,
+          };
+          node.circle = this.nodeLayer
+            .circle(NODE_CIRCLE_RADIUS * 2)
+            .center(node.x, node.y)
+            .fill('#b7b7b7');
+          node.circle.click(() => {
+            console.log(node);
+            this.nodeClickListeners.forEach(listener => listener(node))
+          });
+
+          this.nodes.push(node);
+
+        }
       }
+
+      console.log(this.nodes.length)
+
+      // this.nodeLayer
+      //   .circle(NODE_CIRCLE_RADIUS * 8)
+      //   .center(minX, minY)
+      //   .fill('#000');
+      // this.nodeLayer
+      //   .circle(NODE_CIRCLE_RADIUS * 8)
+      //   .center(maxX, maxY)
+      //   .fill('#000');
     });
 
     Mousetrap.bind(['del', 'backspace'], () => {
@@ -279,6 +323,7 @@ class Network {
         node.circle.off('click');
         node.circle.click(() => {
           console.log(node);
+          this.nodeClickListeners.forEach(listener => listener(node))
         })
       });
       polylines.forEach(p => p.remove());
@@ -302,12 +347,26 @@ class Network {
         this.polylineB.remove();
         this.polylineB = null;
       }
+      if (this.polylineM) {
+        this.polylineM.remove();
+        this.polylineM = null;
+      }
     });
 
     // this.indicatorLayer = this.draw.group().move(width + 20, 20);
     this.currentY = 40;
 
   }
+
+  originPosition({x, y}) {
+    let pt = this.svg.createSVGPoint();
+    pt.x = x;
+    pt.y = y;
+    let svgP = pt.matrixTransform(this.svg.getScreenCTM().inverse());
+    return {
+      x: svgP.x, y: svgP.y
+    }
+  };
 
   remove() {
     this.draw.remove();
@@ -321,8 +380,45 @@ class Network {
   // };
 
 
+  addNodeClickListener(listener) {
+    this.nodeClickListeners.push(listener);
+  }
+
+  removeNodeClickListener(listener) {
+    this.nodeClickListeners = this.nodeClickListeners.filter(l => l !== listener);
+  }
+
+  addMousedownListener(listener) {
+    this.mousedownListeners.push(listener);
+  }
+
+  removeMousedownListener(listener) {
+    this.mousedownListeners = this.mousedownListeners.filter(l => l !== listener);
+  }
+
+  addMousemoveListener(listener) {
+    this.mousemoveListeners.push(listener);
+  }
+
+  removeMousemoveListener(listener) {
+    this.mousemoveListeners = this.mousemoveListeners.filter(l => l !== listener);
+  }
+
+
+  addMouseupListener(listener) {
+    this.mouseupListeners.push(listener);
+  }
+
+  removeMouseupListener(listener) {
+    this.mouseupListeners = this.mouseupListeners.filter(l => l !== listener);
+  }
+
   drawLine({x1, y1, x2, y2, style}) {
     return this.edgeLayer.line(x1, y1, x2, y2).stroke(style);
+  }
+
+  drawText({text, x, y}) {
+    return this.draw.text(text).move(x, y);
   }
 
   drawCircle({centerX, centerY, radius, style}) {
@@ -334,8 +430,15 @@ class Network {
   }
 
   drawPoint({x, y, color}) {
-    this.nodeLayer
+    return this.nodeLayer
       .circle(NODE_CIRCLE_RADIUS * 4)
+      .center(x, y)
+      .fill(color);
+  }
+
+  drawHalo({x, y, radius, color}) {
+    return this.haloLayer
+      .circle(radius)
       .center(x, y)
       .fill(color);
   }
@@ -371,7 +474,7 @@ class Network {
     console.log("draw arrow ne");
     let line1 = this.edgeLayer.line(from.x, from.y, to.x, to.y).stroke(style);
 
-    let arrowLength = 8;
+    let arrowLength = 12;
     let v = {x: from.x - to.x, y: from.y - to.y};
     let up = rotateVectorCCW({x: v.x, y: v.y, angle: Math.PI / 6});
     let upNormalized = {

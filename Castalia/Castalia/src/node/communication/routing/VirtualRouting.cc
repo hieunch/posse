@@ -36,8 +36,8 @@ void VirtualRouting::initialize()
 		opp_error("\n Virtual Routing init: Error in geting a valid reference module(s).");
 
 	self = getParentModule()->getParentModule()->getIndex();
-  neighborTable = GlobalLocationService::getNeighborTable(self);
-  selfLocation = GlobalLocationService::getLocation(self);
+    neighborTable = GlobalLocationService::getNeighborTable(self);
+    selfLocation = GlobalLocationService::getLocation(self);
 	// create the routing level address using self
 	stringstream out; out << self; 	selfAddress = out.str();
 
@@ -73,7 +73,16 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 	// --------------
 
 	netPacket->getNetMacInfoExchange().nextHop = destination;
-	send(netPacket, "toMacModule");
+	if (destination == -1) {
+	    send(netPacket, "toMacModule");
+	} else {
+//        debugLine(selfLocation, GlobalLocationService::getLocation(destination), "black");
+        cModule* desModule = getParentModule()->getParentModule()->getParentModule()->getSubmodule("node", destination)
+            ->getSubmodule("Communication")->getSubmodule("Routing");
+        sendDirect(netPacket, desModule, "fromDirect");
+	}
+
+//
 }
 
 void VirtualRouting::toApplicationLayer(cMessage * msg)
@@ -363,4 +372,12 @@ bool VirtualRouting::reached(Point location) {
   }
 
   return G::distance(selfLocation, location) < RADIO_RANGE;
+}
+
+int VirtualRouting::getRandomNumber(int from, int to) {
+//    srand(time(0));
+//    int result = from + rand() % (to - from + 1);
+//    return result;
+    int result = intrand(to - from + 1) + from;
+    return result;
 }

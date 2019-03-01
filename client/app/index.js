@@ -10,7 +10,7 @@ import FileSaver from 'file-saver';
 import SVGtoPNG from 'save-svg-as-png';
 import distanceToLineSegment from 'distance-to-line-segment';
 import simpleheat from 'simpleheat';
-import data from './data'
+import vis from 'vis';
 
 
 let printDetail = (data) => {
@@ -39,12 +39,120 @@ let printStat = (data) => {
   console.log(stat)
 };
 
+let handleStatistics = (datas, width, height) => {
+  $('#option-panel').show();
+  $('#show-result').off('change');
+  let on = false;
+  $('#show-result').change(() => {
+    on = !on;
+    if (on) {
+      $('#result').show();
+      $('#graph-container').hide();
+    } else {
+      $('#result').hide();
+      $('#graph-container').show();
+    }
+  });
+
+  let max = datas.reduce((acc, val) => {
+    return Math.max(acc,
+      val.data.reduce((acc, node) => Math.max(acc, node.totalPacketReceived), 0));
+  }, 0);
+  datas.forEach((result, i) => {
+    let {routingAlgorithm, data, numTraffic} = result;
+    $('#result').append(`<div id="result${i}"></div>`);
+    let outterDiv = $(`#result${i}`);
+    outterDiv.append(`<p>${routingAlgorithm}</p>`);
+    outterDiv.append(`<canvas id="canvas${i}">${routingAlgorithm}</canvas>`);
+    $(`#canvas${i}`).attr('width', width + 100).attr('height', height + 100);
+    let heat = simpleheat(`canvas${i}`);
+    heat.gradient({
+      0.4: 'blue',
+      0.6: 'cyan',
+      0.7: 'lime',
+      0.8: 'yellow',
+      1.0: 'red'
+    });
+
+    let thresholdMax = 450;
+    let thresholdDraw = 80;
+    let additive = thresholdMax / 5;
+    heat.max(thresholdMax);
+    heat.data(data
+    // .filter(({totalPacketReceived}) => totalPacketReceived > 0)
+      .map(({x, y, totalPacketReceived, energyConsumed}) => {
+        let res = 0;
+        if (totalPacketReceived > thresholdDraw) res = Math.min(thresholdMax, totalPacketReceived);
+        else if (totalPacketReceived > 5) res = totalPacketReceived + additive;
+        else res = 0;
+        return [x + 50, y + 50, res]
+      }));
+    heat.draw();
+    outterDiv.append(`<div id="surface${i}">${routingAlgorithm}</div>`);
+    $(`#surface${i}`).attr('width', width + 100).attr('height', height + 100);
+    var visData = new vis.DataSet();
+    data.forEach(({x, y, id, energyConsumed, totalPacketReceived}) => {
+      let res = 0;
+      if (totalPacketReceived > thresholdDraw) res = totalPacketReceived;
+      else if (totalPacketReceived > 5) res = totalPacketReceived + additive - 5;
+      else res = 0;
+      visData.add({x, y, id, z: res, style: res})
+    });
+
+    console.log(max);
+    // specify options
+    var options = {
+      width: `${width + 50}px`,
+      height: `${height + 50}px`,
+      zMax: max + 5,
+      style: 'dot-line',
+      showPerspective: true,
+      dotSizeRatio: 0.015,
+      showGrid: true,
+      showShadow: false,
+      keepAspectRatio: true,
+      verticalRatio: 0.5
+    };
+
+    // Instantiate our graph object.
+    var container = document.getElementById(`surface${i}`);
+    var graph3d = new vis.Graph3d(container, visData, options);
+
+
+    let sortedLifetime = data.map(({estimateLifetime}) => estimateLifetime).sort();
+    let lifeTime = sortedLifetime[0] * 24;
+    let shortestPathRatioData = data.filter(({sumHopRatio, endPointCount}) => endPointCount > 0);
+    let shortestPathRatio = (
+      shortestPathRatioData
+        .map(a => a.sumHopRatio)
+        .reduce((acc, val) => acc + val, 0)
+    ) / (
+      shortestPathRatioData
+        .map(a => a.endPointCount)
+        .reduce((acc, val) => acc + val, 0)
+    );
+
+
+    let numPacketReceiveds = data.map(x => x.totalPacketReceived);
+    let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
+    let numPacketReceiveds1 = data.map(x => x.totalPacketReceived).filter(x => x > 0);
+    let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
+
+    outterDiv.append(`<p>Estimated Life time: ${lifeTime} hours</p>`);
+    outterDiv.append(`<p>Shortest path ratio: ${shortestPathRatio}</p>`);
+    outterDiv.append(`<p>Number of communication sessions: ${numTraffic}</p>`);
+    outterDiv.append(`<p>Blalancing Index: ${BI}</p>`);
+    outterDiv.append(`<p>Blalancing Index 1: ${BI1}</p>`);
+
+  });
+
+};
+
 $('#result').hide();
 $('#option-panel').hide();
 // $('#graph-container').hide();
 // let width = 1200, height = 1200;
-
-
+// handleStatistics([data, data1], width, height);
 
 
 const generateNodes = ({width, height, V}) => {
@@ -58,12 +166,14 @@ const generateNodes = ({width, height, V}) => {
   let cellWidth = width / nCellWidth;
   let cellHeight = height / nCellHeight;
 
+  console.log("ahihi");
+
   for (let i = 0; i < nCellWidth; i++) {
     for (let j = 0; j < nCellHeight; j++) {
       let startX = cellWidth * i;
       let startY = cellHeight * j;
-      const x = Math.random() * cellWidth + startX;
-      const y = Math.random() * cellHeight + startY;
+      const x = Math.random() * cellWidth * 0.6 + startX + cellWidth * 0.2;
+      const y = Math.random() * cellHeight * 0.6 + startY + cellHeight * 0.2;
       nodes.push({x, y, id: nextId});
       nextId++;
     }
@@ -118,7 +228,33 @@ function init({nodes, width, height, range}) {
     $('#export-btn').off('click');
     $('#submit-btn').off('click');
     $('#reset-btn').off('click');
+    $('#addpair-btn').off('click');
+    $('#addregionpair-btn').off('click');
   }
+
+  let mode = $('#mode-input').val();
+  if (mode === "debug") {
+    $('#addregionpair-btn').hide();
+    $('#traffic-input').hide();
+    $('#addpair-btn').show();
+  } else {
+    $('#addregionpair-btn').show();
+    $('#traffic-input').show();
+    $('#addpair-btn').hide();
+  }
+  $('#mode-input').change(e => {
+    let mode = e.target.value;
+    if (mode === "debug") {
+      $('#addregionpair-btn').hide();
+      $('#traffic-input').hide();
+      $('#addpair-btn').show();
+    } else {
+      $('#addregionpair-btn').show();
+      $('#traffic-input').show();
+      $('#addpair-btn').hide();
+    }
+  });
+
 
   $('#height-input').val(height.toString());
   $('#width-input').val(width.toString());
@@ -146,56 +282,198 @@ function init({nodes, width, height, range}) {
     });
   };
 
+  let traffic = [];
+  $('#addpair-btn').click(() => {
+    let mode = $('#mode-input').val();
 
-  let trafficLines = [];
+    if (mode === "real") {
+      alert("not applicable in real mode!")
+      return;
+    }
 
-  $('#traffic-input').change((e) => {
-    trafficLines.forEach(l => l.remove());
-    trafficLines = [];
-    let traffic = $('#traffic-input').val().split('\n').map(str => {
-      const regex = /(\d+)->(\d+)/;
-      const match = regex.exec(str);
-      if (match)
-        return {
-          source: parseInt(match[1]),
-          destination: parseInt(match[2]),
-        };
-      else {
-        return null;
+    let pair = {
+      source: null,
+      destination: null,
+      numPacket: 1,
+      rate: 1000,
+    };
+
+
+    let listener = (node) => {
+      let color = '#5590ff';
+      network.drawHalo({
+        x: node.x, y: node.y, radius: 10, color: color
+      });
+      if (pair.source === null) {
+        pair.source = node.id;
+      } else {
+        pair.destination = node.id;
+        traffic.push(pair);
+        network.drawArrow({
+          from: network.nodes[pair.source],
+          to: network.nodes[pair.destination],
+          style: {width: '0.5', color: color}
+        })
+        network.removeNodeClickListener(listener);
       }
-    }).filter(_ => _ !== null);
+    };
 
-    traffic = traffic || [];
-
-    traffic.forEach(({source, destination}) => {
-      let from = network.nodes[source], to = network.nodes[destination];
-      trafficLines = trafficLines.concat(network.drawArrow({from, to, style: {width: '0.5', color: 'green'}}));
-    })
+    network.addNodeClickListener(listener);
   });
 
-  let genTraffic = (numPair) => {
-    let A = network.getA();
-    let B = network.getB();
-    let res = [];
-    while (res.length < numPair) {
-      let fromId = A[Math.floor(Math.random() * A.length)].id;
-      let toId = B[Math.floor(Math.random() * B.length)].id;
+  let regionTraffic = {}; // {from: {1, 2, 3}, to: {4, 5, 6}}
+  let regionTrafficCount = 0;
+  $('#addregionpair-btn').click(() => {
 
-      if (!res.find(x => x.source === fromId || x.destination === toId)) {
-        res.push({
-          source: fromId,
-          destination: toId,
-        })
+    let mode = $('#mode-input').val();
+    if (mode === "debug") {
+      alert("not applicable in debug mode!");
+      return;
+    }
+
+
+    regionTrafficCount++;
+    let doneA = false;
+    let doneB = false;
+    let isDowning = false;
+    let polylineA = null;
+    let polylineB = null;
+    network.draw.panZoom(false);
+
+    let mousedownListener = ({x, y}) => {
+      if (polylineA === null && polylineB === null) {
+        polylineA = network.selectLayer.polyline([x, y]).fill('#dfffd6').stroke({width: 0.5});
+        isDowning = true;
+      } else if (polylineA !== null && polylineB === null) {
+        polylineB = network.selectLayer.polyline([x, y]).fill('#cfd4ff').stroke({width: 0.5});
+        isDowning = true;
+      }
+    };
+
+    let mousemoveListener = ({x, y}) => {
+      if (isDowning) {
+        if (polylineA != null && !doneA) {
+          polylineA.plot(polylineA.array().value.concat([[x, y]])).fill('#dfffd6').stroke({width: 0.5});
+        } else if (polylineB != null && !doneB) {
+          polylineB.plot(polylineB.array().value.concat([[x, y]])).fill('#cfd4ff').stroke({width: 0.5});
+        }
+      }
+    };
+
+    let mouseupListener = () => {
+      isDowning = false;
+      if (polylineA != null && !doneA) {
+        doneA = true;
+      } else if (polylineB != null && !doneB) {
+        doneB = true;
+
+        let regionA = network.nodes.filter(node => {
+          return inPolygon([node.x, node.y], polylineA.array().value)
+        });
+        let regionB = network.nodes.filter(node => {
+          return inPolygon([node.x, node.y], polylineB.array().value)
+        });
+
+        let centerA = regionA.reduce((acc, val) => {
+          return {
+            x: acc.x + val.x,
+            y: acc.y + val.y,
+          }
+        }, {x: 0, y: 0});
+        centerA.x = centerA.x / regionA.length;
+        centerA.y = centerA.y / regionA.length;
+        let centerB = regionB.reduce((acc, val) => {
+          return {
+            x: acc.x + val.x,
+            y: acc.y + val.y,
+          }
+        }, {x: 0, y: 0});
+        centerB.x = centerB.x / regionB.length;
+        centerB.y = centerB.y / regionB.length;
+
+        network.drawText({text: regionTrafficCount.toString(), x: centerA.x, y: centerA.y});
+        network.drawText({text: regionTrafficCount.toString(), x: centerB.x, y: centerB.y});
+        network.drawArrow(({from: centerA, to: centerB, style: {color: 'red', width: '1'}}));
+
+
+        regionTraffic[regionTrafficCount] = {
+          from: regionA.map(_ => _.id),
+          to: regionB.map(_ => _.id),
+        };
+
+
+        let trafficText = Object.keys(regionTraffic).map(_ => _ + ":").join("\n");
+        $('#traffic-input').val(trafficText);
+
+        network.removeMousedownListener(mousedownListener);
+        network.removeMousemoveListener(mousemoveListener);
+        network.removeMouseupListener(mouseupListener);
+        network.draw.panZoom();
       }
     }
 
-    return res;
-  };
+    network.addMousedownListener(mousedownListener);
+    network.addMousemoveListener(mousemoveListener);
+    network.addMouseupListener(mouseupListener);
+  });
 
+  let genTraffic = () => {
+    // let A = network.getA();
+    // let B = network.getB();
+    // let res = [];
+    // while (res.length < numPair) {
+    //   let fromId = A[Math.floor(Math.random() * A.length)].id;
+    //   let toId = B[Math.floor(Math.random() * B.length)].id;
+    //
+    //   if (!res.find(x => x.source === fromId || x.destination === toId)) {
+    //     res.push({
+    //       source: fromId,
+    //       destination: toId,
+    //     })
+    //   }
+    // }
+    //
+    // return res;
+    let trafficGroups = $('#traffic-input').val()
+      .split('\n')
+      .filter(l => {
+        return l && l !== "";
+      })
+      .map(txt => {
+        let [region, numPair] = txt.split(":").map(_ => parseInt(_));
+        return {
+          region, numPair
+        }
+      });
+
+    let result = [];
+    trafficGroups.forEach(({region, numPair}) => {
+      let A = regionTraffic[region].from;
+      let B = regionTraffic[region].to;
+      if (numPair > A.length || numPair > B.length) return;
+      let res = [];
+      while (res.length < numPair) {
+        let fromId = A[Math.floor(Math.random() * A.length)];
+        let toId = B[Math.floor(Math.random() * B.length)];
+
+        if (!res.find(x => x.source === fromId || x.destination === toId)) {
+          res.push({
+            source: fromId,
+            destination: toId,
+          })
+        }
+      }
+
+      result = [...result, ...res];
+    });
+
+    console.log(result);
+    return result;
+  };
   let addTraffic = (base, numAdded) => {
 
     let res = [];
-    for (let i = 0; i < base.length; i ++){
+    for (let i = 0; i < base.length; i++) {
       res.push(base[i]);
     }
 
@@ -215,113 +493,18 @@ function init({nodes, width, height, range}) {
 
     return res;
   };
-  $('#traffic-generate-btn').click(() => {
-    let V = network.nodes.length;
-    let numPair = $('#num-traffic-input').val();
-
-
-    trafficLines.forEach(l => l.remove());
-    trafficLines = [];
-    let traffics = [];
-    let A = network.getA();
-    let B = network.getB();
-    for (let i = 0; i < numPair; i++) {
-      let fromId = A[Math.floor(Math.random() * A.length)].id;
-      let toId = B[Math.floor(Math.random() * B.length)].id;
-      let from = network.nodes[fromId], to = network.nodes[toId];
-      traffics.push(`${fromId}->${toId}`);
-      trafficLines = trafficLines.concat(network.drawArrow({from, to, style: {width: '1', color: 'green'}}));
-    }
-
-
-    $('#traffic-input').val(traffics.join('\n'));
-  });
-
-  let handleStatistics = (datas) => {
-    $('#option-panel').show();
-    $('#show-result').off('change');
-    let on = false;
-    $('#show-result').change(() => {
-      on = !on;
-      if (on) {
-        $('#result').show();
-        $('#graph-container').hide();
-      } else {
-        $('#result').hide();
-        $('#graph-container').show();
-      }
-    });
-
-    let max = datas.reduce((acc, val) => {
-      return Math.max(acc,
-        val.data.reduce((acc, node) => Math.max(acc, node.totalPacketReceived), 0));
-    }, 0);
-    datas.forEach((result, i) => {
-      let {routingAlgorithm, data, numTraffic} = result;
-      $('#result').append(`<div id="result${i}"></div>`);
-      let outterDiv = $(`#result${i}`);
-      outterDiv.append(`<p>${routingAlgorithm}</p>`);
-      outterDiv.append(`<canvas id="canvas${i}">${routingAlgorithm}</canvas>`);
-      $(`#canvas${i}`).attr('width', width + 100).attr('height', height + 100);
-      let heat = simpleheat(`canvas${i}`);
-      heat.gradient({
-        0.4: 'blue',
-        0.6: 'cyan',
-        0.7: 'lime',
-        0.8: 'yellow',
-        1.0: 'red'
-      });
-
-      heat.max(220);
-      heat.data(data
-      // .filter(({totalPacketReceived}) => totalPacketReceived > 0)
-        .map(({x, y, totalPacketReceived}) => {
-          let res = 0;
-          if (totalPacketReceived > 45) res = Math.min(220, totalPacketReceived);
-          else if (totalPacketReceived > 5) res = totalPacketReceived + 30;
-          else res = 0;
-          return [x + 50, y + 50, res]
-        }));
-      heat.draw();
-
-      let sortedLifetime = data.map(({estimateLifetime}) => estimateLifetime).sort();
-      let lifeTime = sortedLifetime[0] * 24;
-      let shortestPathRatioData = data.filter(({sumHopRatio, endPointCount}) => endPointCount > 0);
-      let shortestPathRatio = (
-        shortestPathRatioData
-          .map(a => a.sumHopRatio)
-          .reduce((acc, val) => acc + val, 0)
-      ) / (
-        shortestPathRatioData
-          .map(a => a.endPointCount)
-          .reduce((acc, val) => acc + val, 0)
-      );
-
-
-      let numPacketReceiveds = data.map(x => x.totalPacketReceived);
-      let BI = (numPacketReceiveds.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds.length;
-      let numPacketReceiveds1 = data.map(x => x.totalPacketReceived).filter(x => x > 0);
-      let BI1 = (numPacketReceiveds1.reduce((acc, val) => acc + val, 0) ** 2 ) / numPacketReceiveds1.reduce((acc, val) => acc + val * val, 0) / numPacketReceiveds1.length;
-
-      outterDiv.append(`<p>Estimated Life time: ${lifeTime} hours</p>`);
-      outterDiv.append(`<p>Shortest path ratio: ${shortestPathRatio}</p>`);
-      outterDiv.append(`<p>Number of communication sessions: ${numTraffic}</p>`);
-      outterDiv.append(`<p>Blalancing Index: ${BI}</p>`);
-      outterDiv.append(`<p>Blalancing Index 1: ${BI1}</p>`);
-
-    });
-
-  };
 
   let submitReal = () => {
-    let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
-    // let algorithms = ['gpsr'];
+    // let algorithms = ['gpsr', 'rollingBall', 'shortestPath', 'stable'];
+    let algorithms = ['gpsr', 'rollingBall', 'stable', 'mlp'];
     let accData = [];
     let ts = [];
-    ts.push(genTraffic(10));
-    for (let i = 0; i < 4; i++) {
-      ts.push(addTraffic(ts[ts.length - 1], 5));
-    }
+    ts.push(genTraffic());
+
+    // return; // TODO
+    // for (let i = 0; i < 0; i++) {
+    //   ts.push(addTraffic(ts[ts.length - 1], 5));
+    // }
 
     let dateString = (new Date()).getUTCMilliseconds().toString();
 
@@ -397,7 +580,7 @@ function init({nodes, width, height, range}) {
                       accData.push(hahaData);
 
                       if (next === scenes.length - 1) {
-                        handleStatistics(accData);
+                        handleStatistics(accData, width, height);
                       } else {
                         next++;
                         setTimeout(() => makeRequest(), 1000);
@@ -413,28 +596,11 @@ function init({nodes, width, height, range}) {
     };
     makeRequest();
   };
-
   $('#submit-btn').click(() => {
     $('#result').hide();
     $('#option-panel').hide();
     let mode = $('#mode-input').val();
     if (mode === "debug") {
-      let traffic = $('#traffic-input').val().split('\n').map(str => {
-        const regex = /(\d+)->(\d+)/;
-        const match = regex.exec(str);
-        if (match)
-          return {
-            source: parseInt(match[1]),
-            destination: parseInt(match[2]),
-            numPacket: 1,
-            rate: 1000,
-          };
-        else {
-          return null;
-        }
-      }).filter(_ => _ !== null);
-
-      traffic = traffic || [];
       const routingAlgorithm = $('#ra-input').val();
       let data = {
         network: {

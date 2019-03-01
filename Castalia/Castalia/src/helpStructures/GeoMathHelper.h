@@ -433,16 +433,19 @@ class G {
     static void debugArc(Point from, Point to, double radius, string color);
     static void debugPolygon(vector<Point>, string color);
     static void debugPath(vector<Point>, string color);
-	  static std::ostream & trace();
-	  static std::ostream & log();
-	  static Point closestPointOnSegment(LineSegment, Point);
-	  static Point closestPointOnPolygon(vector<Point>, Point);
-	  static double distanceToPolygon(vector<Point>, Point);
-	  static double distanceToLineSegment(LineSegment, Point);
-	  static double deepness(vector<Point>);
-	  static vector<Point> flatten(vector<Point> path);
-	  static double diameter(vector<Point> polygon);
-	  static tuple<Point, Point> hash(vector<Point>);
+	static std::ostream & trace();
+	static std::ostream & log();
+	static Point closestPointOnSegment(LineSegment, Point);
+	static Point closestPointOnPolygon(vector<Point>, Point);
+	static double distanceToPolygon(vector<Point>, Point);
+	static double distanceToLineSegment(LineSegment, Point);
+	static double deepness(vector<Point>);
+	static vector<Point> flatten(vector<Point> path);
+	static double diameter(vector<Point> polygon);
+	static vector<Point> rollBallPath(vector<Point> path, double r);
+	static tuple<Point, Point> hash(vector<Point>);
+
+	static vector<Point> translate(vector<Point> path, double x);
 };
 
 

@@ -7,6 +7,7 @@ int GreedyRouting::nextId;
 void GreedyRouting::startup(){
   seqHello = par("seqHello");
   nextId = 0; // static member
+
 }
 
 void GreedyRouting::timerFiredCallback(int index){
@@ -48,7 +49,7 @@ void GreedyRouting::fromApplicationLayer(cPacket * pkt, const char *destination)
       << " destination:" << dataPacket->getDestination() << " current:" << self;
     trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
 
-//    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
     toMacLayer(dataPacket, nextHop);
     return;
   }
@@ -113,7 +114,7 @@ void GreedyRouting::processDataPacketFromMacLayer(GreedyPacket* pkt){
     trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
       << " destination:" << pkt->getDestination() << " current:" << self;
     trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
-//    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
     toMacLayer(netPacket, nextHop);
     return;
   }

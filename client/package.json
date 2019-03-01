@@ -23,7 +23,8 @@
     "svg.js": "^2.6.4",
     "svg.panzoom.js": "^1.2.0",
     "svg.path.js": "^0.6.2",
-    "svg.shapes.js": "^1.0.0"
+    "svg.shapes.js": "^1.0.0",
+    "vis": "^4.21.0"
   },
   "devDependencies": {
     "auto-reload-brunch": "^2",

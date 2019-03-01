@@ -51,7 +51,7 @@ void RollingBallRouting::fromApplicationLayer(cPacket * pkt, const char *destina
     trace() << "WSN_EVENT SEND packetId:" << dataPacket->getPacketId() << " source:" << dataPacket->getSource()
       << " destination:" << dataPacket->getDestination() << " current:" << self;
     trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
-    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
     toMacLayer(dataPacket, nextHop);
     return;
   }
@@ -115,7 +115,7 @@ void RollingBallRouting::processDataPacketFromMacLayer(RollingBallPacket* pkt){
     trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
       << " destination:" << pkt->getDestination() << " current:" << self;
     trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
-    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "blue");
+    debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
     toMacLayer(netPacket, nextHop);
     return;
   }

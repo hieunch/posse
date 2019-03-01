@@ -78,6 +78,8 @@ function exec({config, sessionId}) {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "StableRouting"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'shortestpath') {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "ShortestPathRouting"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'mlp') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "MlpRouting"\n`)
       } else {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "GpsrRouting"\n`)
       }
@@ -100,15 +102,15 @@ function exec({config, sessionId}) {
     }
 
 
-    writer.write(`sim-time-limit = 315s\n`);
+    writer.write(`sim-time-limit = 30s\n`);
 
     for (let i = 0; i < traffic.length; i++) {
       let pair = traffic[i];
       const {source, destination} = pair;
       writer.write(`SN.node[${source}].Application.isSource = true\n`);
       writer.write(`SN.node[${source}].Application.sink = "${destination}"\n`);
-      writer.write(`SN.node[${source}].Application.startSendingTime = ${5 + i * 10}\n`);
-      writer.write(`SN.node[${source}].Application.stopSendingTime = ${5 + i * 10 + 10}\n`);
+      // writer.write(`SN.node[${source}].Application.startSendingTime = ${5 + i * 10}\n`);
+      // writer.write(`SN.node[${source}].Application.stopSendingTime = ${5 + i * 10 + 10}\n`);
     }
 
     // sim-time-limit = 25s
@@ -116,7 +118,10 @@ function exec({config, sessionId}) {
 
 
     if (mode === "debug") {
-      writer.write(`SN.node[*].Application.numPacketToSend = 1`)
+      writer.write(`SN.node[*].Application.numPacketToSend = 10\n`);
+      writer.write(`SN.isDebugMode = true\n`)
+    } else {
+      writer.write(`SN.isDebugMode = false\n`)
     }
 
     writer.end();

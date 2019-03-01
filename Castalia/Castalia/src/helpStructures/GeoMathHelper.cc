@@ -683,6 +683,117 @@ bool G::distanceEqual(Point A, Point B, double dis) {
   return abs(distance(A, B) - dis) < EPSILON;
 }
 
+vector<Point> G::rollBallPath(vector<Point> points, double r) {
+  vector<Either> parts;
+
+  for (int i = 0; i < points.size() - 1; i++) {
+    Point A = points[i];
+    Point B = points[i + 1];
+    Vector AB(A, B);
+    Point A1 = A + AB.rotate(M_PI / 2) * (r / AB.length());
+    Point B1 = B + AB.rotate(M_PI / 2) * (r / AB.length());
+    DirectedSegment A1B1(A1, B1);
+
+    parts.push_back(Either(A1B1));
+    Point B2 = B + AB.rotate(-M_PI / 2) * (r / AB.length());
+    DirectedArc B1B2(B1, B2, B, r);
+    parts.push_back(Either(B1B2));
+  }
+  parts.pop_back();
+
+  vector<Point> trajectory;
+  trajectory.push_back(parts[0].from());
+  Either current = parts[0];
+  int currentId = 0;
+  int nextId = 0;
+  while (currentId < parts.size()) {
+    Either next;
+    bool foundNext = false;
+    double minDistance = 1e9;
+
+    if (current.isSegment) {
+      DirectedSegment currentSegment = current.directedSegment;
+      for (int i = currentId + 1; i < parts.size(); i++) {
+        Either other = parts[i];
+        if (other.isSegment) {
+          DirectedSegment otherSegment = other.directedSegment;
+          LineSegment ab(currentSegment.from, currentSegment.to),
+                      xy(otherSegment.from, otherSegment.to);
+          if (G::doIntersect(ab, xy)) {
+            foundNext = true;
+            Point M;
+            if (currentSegment.to == otherSegment.from) {
+              M = currentSegment.to;
+            } else {
+              M = G::intersection(ab, xy);
+            }
+
+            if (G::distance(currentSegment.from, M) < minDistance) {
+              minDistance = G::distance(currentSegment.from, M);
+              next = Either(DirectedSegment(M, otherSegment.to));
+              nextId = i;
+            }
+          }
+        } else if (other.isArc) {
+          DirectedArc otherArc = other.directedArc;
+          Point intersection;
+          if (G::is_intersect(currentSegment, otherArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentSegment.from, intersection) < minDistance) {
+              minDistance = G::distance(currentSegment.from, intersection);
+              next = Either(DirectedArc(intersection, otherArc.to, otherArc.center, otherArc.radius));
+              nextId = i;
+            }
+          }
+        }
+      }
+
+//      if (foundNext)
+//        debugLine(current.from(), next.from(), "green");
+    } else {
+      DirectedArc currentArc = current.directedArc;
+      for (int i = currentId + 1; i < parts.size(); i++) {
+        Either other = parts[i];
+        if (other.isSegment) {
+          DirectedSegment otherSegment = other.directedSegment;
+          Point intersection;
+          if (G::is_intersect(otherSegment, currentArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentArc.from, intersection) < minDistance) {
+              minDistance = G::distance(currentArc.from, intersection);
+              next = Either(DirectedSegment(intersection, otherSegment.to));
+              nextId = i;
+            }
+          }
+        } else if (other.isArc) {
+          DirectedArc otherArc = other.directedArc;
+          Point intersection;
+          if (G::is_intersect(currentArc, otherArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentArc.from, intersection) < minDistance) {
+              minDistance = G::distance(currentArc.from, intersection);
+              next = Either(DirectedArc(intersection, otherArc.to, otherArc.center, otherArc.radius));
+              nextId = i;
+            }
+          }
+
+        }
+      }
+//      if (foundNext)
+//        debugArc(current.from(), next.from(), r, "green");
+    }
+    if (!foundNext) break;
+
+    trajectory.push_back(next.from());
+    current = next;
+    currentId = nextId;
+  }
+
+  trajectory.push_back(current.to());
+
+  return trajectory;
+}
+
 vector<Point> G::rollBallCavern(vector<Point> points, double r) {
 //  debugPath(points, "red");
   vector<Either> parts;
@@ -1067,4 +1178,17 @@ tuple<Point, Point> G::hash(vector<Point> vs) {
   }
 
   return make_tuple(Point(xmin, ymin), Point(xmax, ymax));
+}
+
+vector<Point> G::translate(vector<Point> path, double x) {
+  if (x == 0) {
+    return path;
+  } else if (x > 0) {
+    return rollBallPath(path, x);
+  } else if (x < 0) {
+    reverse(path.begin(), path.end());
+    auto res = rollBallPath(path, -x);
+    reverse(res.begin(), res.end());
+    return res;
+  }
 }

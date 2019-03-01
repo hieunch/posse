@@ -25,5 +25,6 @@ moduleinterface iRouting {
 	input fromCommunicationModule;
 	input fromMacModule;
 	input fromCommModuleResourceMgr;
+	input fromDirect @directIn;
 }
 
