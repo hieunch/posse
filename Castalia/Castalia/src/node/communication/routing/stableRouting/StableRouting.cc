@@ -11,6 +11,7 @@ map<tuple<Point, Point, double>, vector<Point> > StableRouting::aroundHoleCache;
 map<tuple<Point, Point, double, double, double>, vector<Point> > StableRouting::findPathCache;
 
 void StableRouting::startup(){
+  //trace() << "OK";
   nextId = 0; // static member
   setTimer(DISCOVER_HOLE_START, 1);
   secondBallRadius = par("secondBallRadius");
@@ -139,7 +140,7 @@ void StableRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, dou
 }
 
 void StableRouting::finishSpecific() {
-  trace() << "WSN_EVENT FINAL" << " id:" << self << " x:" << selfLocation.x() << " y:" << selfLocation.y() << " deathTime:-1";
+  //trace() << "WSN_EVENT FINAL" << " id:" << self << " x:" << selfLocation.x() << " y:" << selfLocation.y() << " deathTime:-1";
 //  log() << "done man ";
 }
 
@@ -342,7 +343,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       else {
         Point stuckLocation = pkt->getStuckLocation();
         Point destLocation = pkt->getDestLocation();
-        if (G::distance(selfLocation, destLocation) < G::distance(stuckLocation, destLocation)) {
+        if (abs(G::distance(selfLocation, destLocation) - G::distance(stuckLocation, destLocation)) < -EPSILON) {
           pkt->setRoutingMode(GREEDY_ROUTING);
           processDataPacket(pkt);
         } else {
@@ -421,7 +422,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       }
       else {
         Point stuckLocation = pkt->getStuckLocation();
-        if (G::distance(selfLocation, nextStoppingPlace) < G::distance(stuckLocation, nextStoppingPlace)) {
+        if (abs(G::distance(selfLocation, nextStoppingPlace) - G::distance(stuckLocation, nextStoppingPlace)) < -EPSILON) {
           pkt->setRoutingMode(GREEDY_ROUTING);
           processDataPacket(pkt);
         } else {
@@ -619,7 +620,7 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   to = newTo;
 
 
-  double maxRadius = 5 * log2(holeDiameter);
+  double maxRadius = 10 * log2(holeDiameter);
   aroundHoleRadius = pathNum * (maxRadius / NUM_PATH);
   vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
 

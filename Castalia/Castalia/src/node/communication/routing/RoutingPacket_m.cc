@@ -283,8 +283,9 @@ Register_Class(RoutingPacket);
 
 RoutingPacket::RoutingPacket(const char *name, int kind) : ::cPacket(name,kind)
 {
-    this->TTL_var = 1000;
+    this->TTL_var = 10000;
     this->hopCount_var = 0;
+    this->distanceCount_var = 0;
     this->source_var = 0;
     this->destination_var = 0;
     this->sequenceNumber_var = 0;
@@ -312,6 +313,7 @@ void RoutingPacket::copy(const RoutingPacket& other)
     this->netMacInfoExchange_var = other.netMacInfoExchange_var;
     this->TTL_var = other.TTL_var;
     this->hopCount_var = other.hopCount_var;
+    this->distanceCount_var = other.distanceCount_var;
     this->source_var = other.source_var;
     this->destination_var = other.destination_var;
     this->sequenceNumber_var = other.sequenceNumber_var;
@@ -323,6 +325,7 @@ void RoutingPacket::parsimPack(cCommBuffer *b)
     doPacking(b,this->netMacInfoExchange_var);
     doPacking(b,this->TTL_var);
     doPacking(b,this->hopCount_var);
+    doPacking(b,this->distanceCount_var);
     doPacking(b,this->source_var);
     doPacking(b,this->destination_var);
     doPacking(b,this->sequenceNumber_var);
@@ -334,6 +337,7 @@ void RoutingPacket::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->netMacInfoExchange_var);
     doUnpacking(b,this->TTL_var);
     doUnpacking(b,this->hopCount_var);
+    doUnpacking(b,this->distanceCount_var);
     doUnpacking(b,this->source_var);
     doUnpacking(b,this->destination_var);
     doUnpacking(b,this->sequenceNumber_var);
@@ -367,6 +371,16 @@ int RoutingPacket::getHopCount() const
 void RoutingPacket::setHopCount(int hopCount)
 {
     this->hopCount_var = hopCount;
+}
+
+double RoutingPacket::getDistanceCount() const
+{
+    return distanceCount_var;
+}
+
+void RoutingPacket::setDistanceCount(double distanceCount)
+{
+    this->distanceCount_var = distanceCount;
 }
 
 const char * RoutingPacket::getSource() const
@@ -446,7 +460,7 @@ const char *RoutingPacketDescriptor::getProperty(const char *propertyname) const
 int RoutingPacketDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 6+basedesc->getFieldCount(object) : 6;
+    return basedesc ? 7+basedesc->getFieldCount(object) : 7;
 }
 
 unsigned int RoutingPacketDescriptor::getFieldTypeFlags(void *object, int field) const
@@ -464,8 +478,9 @@ unsigned int RoutingPacketDescriptor::getFieldTypeFlags(void *object, int field)
         FD_ISEDITABLE,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISEDITABLE,
     };
-    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<7) ? fieldTypeFlags[field] : 0;
 }
 
 const char *RoutingPacketDescriptor::getFieldName(void *object, int field) const
@@ -480,11 +495,12 @@ const char *RoutingPacketDescriptor::getFieldName(void *object, int field) const
         "netMacInfoExchange",
         "TTL",
         "hopCount",
+        "distanceCount",
         "source",
         "destination",
         "sequenceNumber",
     };
-    return (field>=0 && field<6) ? fieldNames[field] : NULL;
+    return (field>=0 && field<7) ? fieldNames[field] : NULL;
 }
 
 int RoutingPacketDescriptor::findField(void *object, const char *fieldName) const
@@ -494,9 +510,10 @@ int RoutingPacketDescriptor::findField(void *object, const char *fieldName) cons
     if (fieldName[0]=='n' && strcmp(fieldName, "netMacInfoExchange")==0) return base+0;
     if (fieldName[0]=='T' && strcmp(fieldName, "TTL")==0) return base+1;
     if (fieldName[0]=='h' && strcmp(fieldName, "hopCount")==0) return base+2;
-    if (fieldName[0]=='s' && strcmp(fieldName, "source")==0) return base+3;
-    if (fieldName[0]=='d' && strcmp(fieldName, "destination")==0) return base+4;
-    if (fieldName[0]=='s' && strcmp(fieldName, "sequenceNumber")==0) return base+5;
+    if (fieldName[0]=='d' && strcmp(fieldName, "distanceCount")==0) return base+3;
+    if (fieldName[0]=='s' && strcmp(fieldName, "source")==0) return base+4;
+    if (fieldName[0]=='d' && strcmp(fieldName, "destination")==0) return base+5;
+    if (fieldName[0]=='s' && strcmp(fieldName, "sequenceNumber")==0) return base+6;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
@@ -512,11 +529,12 @@ const char *RoutingPacketDescriptor::getFieldTypeString(void *object, int field)
         "NetMacInfoExchange_type",
         "int",
         "int",
+        "double",
         "string",
         "string",
         "unsigned int",
     };
-    return (field>=0 && field<6) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<7) ? fieldTypeStrings[field] : NULL;
 }
 
 const char *RoutingPacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
@@ -559,9 +577,10 @@ std::string RoutingPacketDescriptor::getFieldAsString(void *object, int field, i
         case 0: {std::stringstream out; out << pp->getNetMacInfoExchange(); return out.str();}
         case 1: return long2string(pp->getTTL());
         case 2: return long2string(pp->getHopCount());
-        case 3: return oppstring2string(pp->getSource());
-        case 4: return oppstring2string(pp->getDestination());
-        case 5: return ulong2string(pp->getSequenceNumber());
+        case 3: return double2string(pp->getDistanceCount());
+        case 4: return oppstring2string(pp->getSource());
+        case 5: return oppstring2string(pp->getDestination());
+        case 6: return ulong2string(pp->getSequenceNumber());
         default: return "";
     }
 }
@@ -578,9 +597,10 @@ bool RoutingPacketDescriptor::setFieldAsString(void *object, int field, int i, c
     switch (field) {
         case 1: pp->setTTL(string2long(value)); return true;
         case 2: pp->setHopCount(string2long(value)); return true;
-        case 3: pp->setSource((value)); return true;
-        case 4: pp->setDestination((value)); return true;
-        case 5: pp->setSequenceNumber(string2ulong(value)); return true;
+        case 3: pp->setDistanceCount(string2double(value)); return true;
+        case 4: pp->setSource((value)); return true;
+        case 5: pp->setDestination((value)); return true;
+        case 6: pp->setSequenceNumber(string2ulong(value)); return true;
         default: return false;
     }
 }

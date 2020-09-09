@@ -66,7 +66,9 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 
   // energy ---------
 	double byteLength = netPacket->getByteLength();
+	// for (int i=0; i<10; i++) trace() << "OK " << destination;
 	Point nextHopLocation = GlobalLocationService::getLocation(destination);
+	// for (int i=0; i<10; i++) trace() << "OK2";
 	double distance = G::distance(selfLocation, nextHopLocation);
 	double powerNeeded = 3 * (50e-8 * byteLength * 8 + 100e-12 * byteLength * 8 * distance * distance);
 	resMgrModule->consumeEnergy(powerNeeded);
@@ -74,12 +76,16 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 
 	netPacket->getNetMacInfoExchange().nextHop = destination;
 	if (destination == -1) {
+		// for (int i=0; i<10; i++) trace() << "toMacModule";
 	    send(netPacket, "toMacModule");
+		// for (int i=0; i<10; i++) trace() << "finished";
 	} else {
 //        debugLine(selfLocation, GlobalLocationService::getLocation(destination), "black");
         cModule* desModule = getParentModule()->getParentModule()->getParentModule()->getSubmodule("node", destination)
             ->getSubmodule("Communication")->getSubmodule("Routing");
+			// for (int i=0; i<10; i++) trace() << "toMacModule";
         sendDirect(netPacket, desModule, "fromDirect");
+		// for (int i=0; i<10; i++) trace() << "finished";
 	}
 
 //
@@ -142,7 +148,7 @@ void VirtualRouting::handleMessage(cMessage * msg)
 				    ", max Network packet size:" << maxNetFrameSize;
 				break;
 			}
-			trace() << "Received [" << appPacket->getName() << "] from application layer";
+			trace1() << "Received [" << appPacket->getName() << "] from application layer";
 
 			/* Control is now passed to a specific routing protocol by calling fromApplicationLayer()
 			 * Notice that after the call we RETURN (not BREAK) so that the packet is not deleted.
@@ -167,6 +173,7 @@ void VirtualRouting::handleMessage(cMessage * msg)
 			 * by fromMacLayer(), i.e., the normal/expected action.
 			 */
 			numPacketReceived++;
+			GlobalLocationService::increaseNumReceived(self);
       // energy ---------
       double byteLength = netPacket->getByteLength();
       Point nextHopLocation = GlobalLocationService::getLocation(info.lastHop);
@@ -184,12 +191,17 @@ void VirtualRouting::handleMessage(cMessage * msg)
 
 			  netPacket->setTTL(netPacket->getTTL() - 1);
 			  netPacket->setHopCount(netPacket->getHopCount() + 1);
+			//   netPacket->setDistanceCount(netPacket->getDistanceCount() + distance);
         if (dst.compare(SELF_NETWORK_ADDRESS) == 0) {
           double hopCount = (double) netPacket->getHopCount();
+		//   double distanceCount = netPacket->getDistanceCount();
           int s = atoi(netPacket->getSource());
           int d = atoi(netPacket->getDestination());
           double ratio = hopCount / GlobalLocationService::numHopShortestPath(s, d);
+		  trace() << "hop ratio " << ratio << " " << hopCount << " " << GlobalLocationService::numHopShortestPath(s, d);
           sumRatioEndCount += ratio;
+		  maxRatio = max(maxRatio, ratio);
+		//   sumDistanceEndCount += distanceCount;
           endCount++;
         }
 			  fromMacLayer(netPacket, info.lastHop, info.RSSI, info.LQI);
@@ -263,9 +275,9 @@ void VirtualRouting::finish()
 //  if (self == 801 || self == 0)
 //    log() << resMgrModule->getSpentEnergy() << " days " << self;
 
-  trace() << "WSN_EVENT STATISTICS " << "id:" << self << " totalPacketReceived:" << numPacketReceived << " "
+  trace1() << "WSN_EVENT STATISTICS " << "id:" << self << " totalPacketReceived:" << numPacketReceived << " "
     << "estimateLifetime:" << resMgrModule->estimateLifetime() << " x:" << selfLocation.x() << " y:" << selfLocation.y()
-    << " sumHopRatio:" << sumRatioEndCount << " endPointCount:" << endCount
+    << " sumHopRatio:" << sumRatioEndCount << " maxRatio:" << maxRatio << " sumDistanceRatio:" << sumDistanceEndCount << " endPointCount:" << endCount
     << " energyConsumed:" << resMgrModule->getSpentEnergy();
 
 	CastaliaModule::finish();

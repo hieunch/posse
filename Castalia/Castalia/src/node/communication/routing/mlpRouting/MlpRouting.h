@@ -65,6 +65,7 @@ class MlpRouting: public VirtualRouting {
     tuple<vector<Point>, int, double, int> findPath(Point from, Point to,
         vector<Point> &hole, vector<vector<Point>> &caverns);
     vector<Point> findPathOutCavern(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, int delta);
+    vector<Point> findPathOutCavern2(Point from, Point to, vector<Point> &hole, vector<Point> &cavern, int delta);
     vector<Point> findPathAroundHole(Point from, Point to, vector<Point> &hole, double ballRadius);
 };
 

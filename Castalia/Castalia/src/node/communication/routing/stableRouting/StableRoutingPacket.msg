@@ -2,9 +2,16 @@
 cplusplus {{
 #include "RoutingPacket_m.h"
 #include "GeoMathHelper.h"
+typedef std::vector<Point> PointVector;
+typedef std::vector<CavernNode> Cavern;
+typedef std::vector<Cavern> CavernVector;
 }}
 
 class noncobject Point;
+class noncobject PointVector;
+class noncobject CavernNode;
+class noncobject Cavern;
+class noncobject CavernVector;
 
 class RoutingPacket;
 
@@ -45,6 +52,8 @@ packet DiscoverHolePacket extends RoutingPacket {
   Point ballCenter;
   int previousId;
   string path;
+  CavernVector caverns;
+  PointVector hole;
 }
 
 

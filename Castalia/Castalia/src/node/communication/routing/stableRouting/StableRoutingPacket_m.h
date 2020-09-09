@@ -18,10 +18,13 @@
 // cplusplus {{
 #include "RoutingPacket_m.h"
 #include "GeoMathHelper.h"
+typedef std::vector<Point> PointVector;
+typedef std::vector<CavernNode> Cavern;
+typedef std::vector<Cavern> CavernVector;
 // }}
 
 /**
- * Enum generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:11</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:18</tt> by nedtool.
  * <pre>
  * enum StablePacketDef
  * {
@@ -35,7 +38,7 @@ enum StablePacketDef {
 };
 
 /**
- * Enum generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:15</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:22</tt> by nedtool.
  * <pre>
  * enum RollingBallForwardingMode
  * {
@@ -51,7 +54,7 @@ enum RollingBallForwardingMode {
 };
 
 /**
- * Class generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:20</tt> by nedtool.
+ * Class generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:27</tt> by nedtool.
  * <pre>
  * packet StablePacket extends RoutingPacket
  * {
@@ -150,7 +153,7 @@ inline void doPacking(cCommBuffer *b, StablePacket& obj) {obj.parsimPack(b);}
 inline void doUnpacking(cCommBuffer *b, StablePacket& obj) {obj.parsimUnpack(b);}
 
 /**
- * Class generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:43</tt> by nedtool.
+ * Class generated from <tt>src/node/communication/routing/stableRouting/StableRoutingPacket.msg:50</tt> by nedtool.
  * <pre>
  * packet DiscoverHolePacket extends RoutingPacket
  * {
@@ -158,6 +161,8 @@ inline void doUnpacking(cCommBuffer *b, StablePacket& obj) {obj.parsimUnpack(b);
  *     Point ballCenter;
  *     int previousId;
  *     string path;
+ *     CavernVector caverns;
+ *     PointVector hole;
  * }
  * </pre>
  */
@@ -168,6 +173,8 @@ class DiscoverHolePacket : public ::RoutingPacket
     Point ballCenter_var;
     int previousId_var;
     opp_string path_var;
+    CavernVector caverns_var;
+    PointVector hole_var;
 
   private:
     void copy(const DiscoverHolePacket& other);
@@ -195,6 +202,12 @@ class DiscoverHolePacket : public ::RoutingPacket
     virtual void setPreviousId(int previousId);
     virtual const char * getPath() const;
     virtual void setPath(const char * path);
+    virtual CavernVector& getCaverns();
+    virtual const CavernVector& getCaverns() const {return const_cast<DiscoverHolePacket*>(this)->getCaverns();}
+    virtual void setCaverns(const CavernVector& caverns);
+    virtual PointVector& getHole();
+    virtual const PointVector& getHole() const {return const_cast<DiscoverHolePacket*>(this)->getHole();}
+    virtual void setHole(const PointVector& hole);
 };
 
 inline void doPacking(cCommBuffer *b, DiscoverHolePacket& obj) {obj.parsimPack(b);}

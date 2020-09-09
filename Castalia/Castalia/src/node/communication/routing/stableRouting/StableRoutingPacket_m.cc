@@ -579,6 +579,8 @@ void DiscoverHolePacket::copy(const DiscoverHolePacket& other)
     this->ballCenter_var = other.ballCenter_var;
     this->previousId_var = other.previousId_var;
     this->path_var = other.path_var;
+    this->caverns_var = other.caverns_var;
+    this->hole_var = other.hole_var;
 }
 
 void DiscoverHolePacket::parsimPack(cCommBuffer *b)
@@ -588,6 +590,8 @@ void DiscoverHolePacket::parsimPack(cCommBuffer *b)
     doPacking(b,this->ballCenter_var);
     doPacking(b,this->previousId_var);
     doPacking(b,this->path_var);
+    doPacking(b,this->caverns_var);
+    doPacking(b,this->hole_var);
 }
 
 void DiscoverHolePacket::parsimUnpack(cCommBuffer *b)
@@ -597,6 +601,8 @@ void DiscoverHolePacket::parsimUnpack(cCommBuffer *b)
     doUnpacking(b,this->ballCenter_var);
     doUnpacking(b,this->previousId_var);
     doUnpacking(b,this->path_var);
+    doUnpacking(b,this->caverns_var);
+    doUnpacking(b,this->hole_var);
 }
 
 int DiscoverHolePacket::getOriginatorId() const
@@ -637,6 +643,26 @@ const char * DiscoverHolePacket::getPath() const
 void DiscoverHolePacket::setPath(const char * path)
 {
     this->path_var = path;
+}
+
+CavernVector& DiscoverHolePacket::getCaverns()
+{
+    return caverns_var;
+}
+
+void DiscoverHolePacket::setCaverns(const CavernVector& caverns)
+{
+    this->caverns_var = caverns;
+}
+
+PointVector& DiscoverHolePacket::getHole()
+{
+    return hole_var;
+}
+
+void DiscoverHolePacket::setHole(const PointVector& hole)
+{
+    this->hole_var = hole;
 }
 
 class DiscoverHolePacketDescriptor : public cClassDescriptor
@@ -686,7 +712,7 @@ const char *DiscoverHolePacketDescriptor::getProperty(const char *propertyname) 
 int DiscoverHolePacketDescriptor::getFieldCount(void *object) const
 {
     cClassDescriptor *basedesc = getBaseClassDescriptor();
-    return basedesc ? 4+basedesc->getFieldCount(object) : 4;
+    return basedesc ? 6+basedesc->getFieldCount(object) : 6;
 }
 
 unsigned int DiscoverHolePacketDescriptor::getFieldTypeFlags(void *object, int field) const
@@ -702,8 +728,10 @@ unsigned int DiscoverHolePacketDescriptor::getFieldTypeFlags(void *object, int f
         FD_ISCOMPOUND,
         FD_ISEDITABLE,
         FD_ISEDITABLE,
+        FD_ISCOMPOUND,
+        FD_ISCOMPOUND,
     };
-    return (field>=0 && field<4) ? fieldTypeFlags[field] : 0;
+    return (field>=0 && field<6) ? fieldTypeFlags[field] : 0;
 }
 
 const char *DiscoverHolePacketDescriptor::getFieldName(void *object, int field) const
@@ -719,8 +747,10 @@ const char *DiscoverHolePacketDescriptor::getFieldName(void *object, int field) 
         "ballCenter",
         "previousId",
         "path",
+        "caverns",
+        "hole",
     };
-    return (field>=0 && field<4) ? fieldNames[field] : NULL;
+    return (field>=0 && field<6) ? fieldNames[field] : NULL;
 }
 
 int DiscoverHolePacketDescriptor::findField(void *object, const char *fieldName) const
@@ -731,6 +761,8 @@ int DiscoverHolePacketDescriptor::findField(void *object, const char *fieldName)
     if (fieldName[0]=='b' && strcmp(fieldName, "ballCenter")==0) return base+1;
     if (fieldName[0]=='p' && strcmp(fieldName, "previousId")==0) return base+2;
     if (fieldName[0]=='p' && strcmp(fieldName, "path")==0) return base+3;
+    if (fieldName[0]=='c' && strcmp(fieldName, "caverns")==0) return base+4;
+    if (fieldName[0]=='h' && strcmp(fieldName, "hole")==0) return base+5;
     return basedesc ? basedesc->findField(object, fieldName) : -1;
 }
 
@@ -747,8 +779,10 @@ const char *DiscoverHolePacketDescriptor::getFieldTypeString(void *object, int f
         "Point",
         "int",
         "string",
+        "CavernVector",
+        "PointVector",
     };
-    return (field>=0 && field<4) ? fieldTypeStrings[field] : NULL;
+    return (field>=0 && field<6) ? fieldTypeStrings[field] : NULL;
 }
 
 const char *DiscoverHolePacketDescriptor::getFieldProperty(void *object, int field, const char *propertyname) const
@@ -792,6 +826,8 @@ std::string DiscoverHolePacketDescriptor::getFieldAsString(void *object, int fie
         case 1: {std::stringstream out; out << pp->getBallCenter(); return out.str();}
         case 2: return long2string(pp->getPreviousId());
         case 3: return oppstring2string(pp->getPath());
+        case 4: {std::stringstream out; out << pp->getCaverns(); return out.str();}
+        case 5: {std::stringstream out; out << pp->getHole(); return out.str();}
         default: return "";
     }
 }
@@ -823,6 +859,8 @@ const char *DiscoverHolePacketDescriptor::getFieldStructName(void *object, int f
     }
     switch (field) {
         case 1: return opp_typename(typeid(Point));
+        case 4: return opp_typename(typeid(CavernVector));
+        case 5: return opp_typename(typeid(PointVector));
         default: return NULL;
     };
 }
@@ -838,6 +876,8 @@ void *DiscoverHolePacketDescriptor::getFieldStructPointer(void *object, int fiel
     DiscoverHolePacket *pp = (DiscoverHolePacket *)object; (void)pp;
     switch (field) {
         case 1: return (void *)(&pp->getBallCenter()); break;
+        case 4: return (void *)(&pp->getCaverns()); break;
+        case 5: return (void *)(&pp->getHole()); break;
         default: return NULL;
     }
 }

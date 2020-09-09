@@ -32,7 +32,7 @@ void SimplePairApplication::startup()
 	stopSendingTime = par("stopSendingTime").doubleValue();
 
 	if (isSource) {
-		setTimer(SEND_PACKET, 10); // 10s of set up
+		setTimer(SEND_PACKET, 20); // 10s of set up
 	}
 	else
 		trace() << "Not sending packets";

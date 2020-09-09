@@ -9,10 +9,12 @@ int ShortestPathRouting::nextId;
 map<tuple<Point, Point>, vector<Point> > ShortestPathRouting::shortestPathCache;
 
 void ShortestPathRouting::startup(){
+  for (int i=0; i<3; i++) trace() << "startup started";
   nextId = 0; // static member
   setTimer(DISCOVER_HOLE_START, 1);
   secondBallRadius = par("secondBallRadius");
   receivedHole = false;
+  for (int i=0; i<3; i++) trace() << "startup completed";
 }
 
 void ShortestPathRouting::timerFiredCallback(int index){
@@ -104,6 +106,8 @@ void ShortestPathRouting::fromApplicationLayer(cPacket * pkt, const char *destin
 void ShortestPathRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
   ShortestPathDiscoverHolePacket *discoverHolePacket = dynamic_cast <ShortestPathDiscoverHolePacket*>(pkt);
   if (discoverHolePacket) {
+    trace() << "WSN_EVENT RECEIVE DISCOVER HOLE" << " source:" << discoverHolePacket->getSource()
+        << " destination:" << discoverHolePacket->getDestination() << " current:" << self;
     processDiscoverHolePacket(discoverHolePacket);
     return;
   }
@@ -112,6 +116,9 @@ void ShortestPathRouting::fromMacLayer(cPacket * pkt, int macAddress, double rss
   ShortestPathRoutingPacket *netPacket = dynamic_cast <ShortestPathRoutingPacket*>(pkt);
   if (!netPacket)
     return;
+
+  trace() << "WSN_EVENT RECEIVE DATA packetId:" << netPacket->getPacketId() << " source:" << netPacket->getSource()
+        << " destination:" << netPacket->getDestination() << " current:" << self;
 
   switch (netPacket->getShortestPathPacketKind()) {
     case SHORTEST_PATH_DATA_PACKET:
@@ -143,7 +150,7 @@ void ShortestPathRouting::finishSpecific() {
 }
 
 void ShortestPathRouting::processHole(ShortestPathDiscoverHolePacket* pkt) {
-
+  trace() << "PROCESS HOLE";
   Point ballCenter = pkt->getBallCenter();
   string pathString(pkt->getPath());
   vector<int> path = Util::stringToIntVector(pathString);
@@ -152,6 +159,7 @@ void ShortestPathRouting::processHole(ShortestPathDiscoverHolePacket* pkt) {
     points.push_back(GlobalLocationService::getLocation(id));
   }
   if (!G::pointInPolygon(points, ballCenter)) {
+    trace() << "outside boundary";
     return; // outside boundary
   }
 
@@ -198,12 +206,15 @@ void ShortestPathRouting::processHole(ShortestPathDiscoverHolePacket* pkt) {
 
   }
 
+  trace() << "receivedHole true";
+
   receivedHole = true;
   hole = points;
   holeDiameter = G::diameter(convexHull);
   double distanceToHole = G::distanceToPolygon(convexHull, selfLocation);
 
   if (distanceToHole < 20 * log2(holeDiameter) || G::pointInOrOnPolygon(convexHull, selfLocation)) {
+    trace() << "propagateHole";
     propagateHole(pkt);
   }
 
@@ -216,6 +227,7 @@ void ShortestPathRouting::processDiscoverHolePacket(ShortestPathDiscoverHolePack
 
   if ((dst.compare(BROADCAST_NETWORK_ADDRESS) == 0)) {
     if (!receivedHole) {
+      trace() << "not receive hole";
       processHole(pkt);
     }
     return;
@@ -259,6 +271,7 @@ void ShortestPathRouting::processDiscoverHolePacket(ShortestPathDiscoverHolePack
     newPkt->setPreviousId(self);
     newPkt->setBallCenter(nextCenter);
     newPkt->setPath(Util::intVectorToString(path).c_str());
+    trace() << "DISCOVER HOLE source:" << pkt->getSource() << " current:" << self << " next"  << nextHop;
     toMacLayer(newPkt, nextHop);
   }
 
@@ -266,21 +279,35 @@ void ShortestPathRouting::processDiscoverHolePacket(ShortestPathDiscoverHolePack
 
 
 void ShortestPathRouting::propagateHole(ShortestPathDiscoverHolePacket *pkt) {
-  ShortestPathDiscoverHolePacket *dup = pkt->dup();
+  ShortestPathDiscoverHolePacket *dup = new ShortestPathDiscoverHolePacket("Discover hole packet", NETWORK_LAYER_PACKET);
+  trace() << "setDestination BROADCAST_NETWORK_ADDRESS";
+  dup->setOriginatorId(pkt->getOriginatorId());
+  dup->setPreviousId(pkt->getPreviousId()); // unspecified previous point
+  dup->setPath(pkt->getPath());
+  dup->setBallCenter(pkt->getBallCenter());
+  trace() << "setDestination BROADCAST_NETWORK_ADDRESS";
   dup->setDestination(BROADCAST_NETWORK_ADDRESS);
+
+  for (int i=0; i<100; i++){
+    trace() << "PROPAGATE HOLE source:";
+  }
+  trace() << "PROPAGATE HOLE source:";
   toMacLayer(dup, BROADCAST_MAC_ADDRESS);
 }
 
 void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
 //  debugPoint(selfLocation, "green");
+  trace() << "PROCESS DATA PACKET source:" << pkt->getSource() << " current:" << self << " destination:" << pkt->getDestination();
   Point destLocation = pkt->getDestLocation();
   if (pkt->getNextStoppingPlace().isUnspecified()) {
+    trace() << "NextStoppingPlace isUnspecified";
     if (receivedHole) {
       // first time in
+      trace() << "first time in";
       vector<Point> path;
       path = findPath(selfLocation, destLocation, hole, caverns);
 //      debugPath(path, "black");
-
+      trace() << "setNextStoppingPlace " << GlobalLocationService::getId(path[1]) << " " << path[1];
       pkt->setStartShortestPathLocation(selfLocation);
       pkt->setNextStoppingPlace(path[1]);
       pkt->setRoutingMode(GREEDY_ROUTING);
@@ -288,6 +315,7 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
       processDataPacket(pkt);
     } else {
       // still outside
+      trace() << "still outside";
       if (pkt->getRoutingMode() == GREEDY_ROUTING) {
         int nextHop = -1;
         double minDist = G::distance(selfLocation, destLocation);
@@ -301,9 +329,13 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
+          trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+      << " destination:" << pkt->getDestination() << " current:" << self;
+    trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
           debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
+          trace() << "set mode ROLLINGBALL_ROUTING";
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
           pkt->setStuckLocation(selfLocation);
 
@@ -332,6 +364,9 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
+            trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+      << " destination:" << pkt->getDestination() << " current:" << self;
+    trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
             debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }
@@ -340,26 +375,32 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
     }
   } else {
     // heading to the next stopping place
+    trace() << "heading to the next stopping place";
     Point nextStoppingPlace = pkt->getNextStoppingPlace();
     if (reached(nextStoppingPlace)) {
       Point startShortestPathLocation = pkt->getStartShortestPathLocation();
 
       vector<Point> path = findPath(startShortestPathLocation, destLocation, hole, caverns);
+      for (int i = 0; i < path.size(); i++) {
+        trace() << GlobalLocationService::getId(path[i]) << " " << path[i];
+      }
       int j = -1;
       for (int i = 0; i < path.size() - 1; i++) {
         if (path[i] == nextStoppingPlace) {
           j = i;
-          break;
+          // break;
         }
       }
 
       if (j != -1) {
+        trace() << "setNextStoppingPlace " << GlobalLocationService::getId(path[j+1]) << " " << path[j+1];
         pkt->setNextStoppingPlace(path[j + 1]);
         processDataPacket(pkt);
       }
 
     } else {
       if (pkt->getRoutingMode() == GREEDY_ROUTING) {
+        trace() << "GREEDY_ROUTING mode";
         int nextHop = -1;
         double minDist = G::distance(selfLocation, nextStoppingPlace);
 
@@ -372,6 +413,9 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           }
         }
         if (nextHop != -1) {
+          trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+      << " destination:" << pkt->getDestination() << " current:" << self;
+    trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
           debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
           toMacLayer(pkt, nextHop);
         } else {
@@ -402,6 +446,9 @@ void ShortestPathRouting::processDataPacket(ShortestPathRoutingPacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
+            trace() << "WSN_EVENT FORWARD packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+      << " destination:" << pkt->getDestination() << " current:" << self;
+    trace() << "WSN_EVENT ENERGY id:" << self << " energy:" << resMgrModule->getRemainingEnergy();
             debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "green");
             toMacLayer(pkt, nextHop);
           }

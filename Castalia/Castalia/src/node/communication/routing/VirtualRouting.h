@@ -63,6 +63,8 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 
   int endCount = 0;
   double sumRatioEndCount = 0;
+  double maxRatio = 0;
+  double sumDistanceEndCount = 0;
 
 
 	queue< cPacket* > TXBuffer;

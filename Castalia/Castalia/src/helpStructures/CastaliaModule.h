@@ -80,6 +80,7 @@ class CastaliaModule: public virtual cSimpleModule {
 	virtual void finish();
 	virtual void finishSpecific() { };
 	std::ostream & trace();
+	std::ostream & trace1();
 	std::ostream & debug();
 	std::ostream & log();
 

@@ -19,10 +19,11 @@
 #include "RoutingPacket_m.h"
 #include "GeoMathHelper.h"
 #include "StableRoutingPacket_m.h"
+typedef std::vector<Point> PointVector;
 // }}
 
 /**
- * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:12</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:14</tt> by nedtool.
  * <pre>
  * enum MlpPacketDef
  * {
@@ -36,7 +37,7 @@ enum MlpPacketDef {
 };
 
 /**
- * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:16</tt> by nedtool.
+ * Enum generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:18</tt> by nedtool.
  * <pre>
  * enum MLPForwardingMode
  * {
@@ -52,7 +53,7 @@ enum MLPForwardingMode {
 };
 
 /**
- * Class generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:21</tt> by nedtool.
+ * Class generated from <tt>src/node/communication/routing/mlpRouting/MlpRoutingPacket.msg:23</tt> by nedtool.
  * <pre>
  * packet MlpPacket extends RoutingPacket
  * {
@@ -69,8 +70,10 @@ enum MLPForwardingMode {
  *     Point stuckLocation;
  *     int routingMode @enum(MLPForwardingMode);
  * 
- * 
+ *     Point previousStoppingPlace;
  *     Point nextStoppingPlace;
+ *     int nextStoppingPlaceId;
+ *     PointVector path;
  * 
  *     Point startStableLocation;
  *     int outDelta = 99999;
@@ -90,7 +93,10 @@ class MlpPacket : public ::RoutingPacket
     Point ballCenter_var;
     Point stuckLocation_var;
     int routingMode_var;
+    Point previousStoppingPlace_var;
     Point nextStoppingPlace_var;
+    int nextStoppingPlaceId_var;
+    PointVector path_var;
     Point startStableLocation_var;
     int outDelta_var;
     double aroundHoleRadius_var;
@@ -133,9 +139,17 @@ class MlpPacket : public ::RoutingPacket
     virtual void setStuckLocation(const Point& stuckLocation);
     virtual int getRoutingMode() const;
     virtual void setRoutingMode(int routingMode);
+    virtual Point& getPreviousStoppingPlace();
+    virtual const Point& getPreviousStoppingPlace() const {return const_cast<MlpPacket*>(this)->getPreviousStoppingPlace();}
+    virtual void setPreviousStoppingPlace(const Point& previousStoppingPlace);
     virtual Point& getNextStoppingPlace();
     virtual const Point& getNextStoppingPlace() const {return const_cast<MlpPacket*>(this)->getNextStoppingPlace();}
     virtual void setNextStoppingPlace(const Point& nextStoppingPlace);
+    virtual int getNextStoppingPlaceId() const;
+    virtual void setNextStoppingPlaceId(int nextStoppingPlaceId);
+    virtual PointVector& getPath();
+    virtual const PointVector& getPath() const {return const_cast<MlpPacket*>(this)->getPath();}
+    virtual void setPath(const PointVector& path);
     virtual Point& getStartStableLocation();
     virtual const Point& getStartStableLocation() const {return const_cast<MlpPacket*>(this)->getStartStableLocation();}
     virtual void setStartStableLocation(const Point& startStableLocation);

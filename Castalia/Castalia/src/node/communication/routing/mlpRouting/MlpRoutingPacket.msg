@@ -3,9 +3,11 @@ cplusplus {{
 #include "RoutingPacket_m.h"
 #include "GeoMathHelper.h"
 #include "StableRoutingPacket_m.h"
+typedef std::vector<Point> PointVector;
 }}
 
 class noncobject Point;
+class noncobject PointVector;
 
 class RoutingPacket;
 
@@ -32,8 +34,10 @@ packet MlpPacket extends RoutingPacket {
   Point stuckLocation;
   int routingMode enum (MLPForwardingMode);
 
-
+  Point previousStoppingPlace;
   Point nextStoppingPlace;
+  int nextStoppingPlaceId;
+  PointVector path;
 
   Point startStableLocation;
   int outDelta = 99999;

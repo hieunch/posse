@@ -85,6 +85,12 @@ std::ostream & CastaliaModule::trace()
 	}
 }
 
+std::ostream & CastaliaModule::trace1()
+{
+	return (ostream &) DebugInfoWriter::getStream() <<
+		endl << setw(18) << simTime() << setw(40) << getFullPath() << " ";
+}
+
 std::ostream & CastaliaModule::debug()
 {
 	return cerr;

@@ -105,6 +105,9 @@ void MlpRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double
   if (!netPacket)
     return;
 
+  trace() << "WSN_EVENT RECEIVE DATA packetId:" << netPacket->getPacketId() << " source:" << netPacket->getSource()
+        << " destination:" << netPacket->getDestination() << " current:" << self;
+
   switch (netPacket->getMlpPacketKind()) {
     case MLP_DATA_PACKET:
       {
@@ -273,8 +276,10 @@ void MlpRouting::propagateHole(DiscoverHolePacket *pkt) {
 }
 
 void MlpRouting::processDataPacket(MlpPacket* pkt){
+  trace() << "PROCESS HOLE";
   Point destLocation = pkt->getDestLocation();
   if (pkt->getNextStoppingPlace().isUnspecified()) {
+    trace() << "getNextStoppingPlace isUnspecified";
     if (receivedHole) {
       // first time in
       vector<Point> path;
@@ -309,6 +314,8 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
         }
         if (nextHop != -1) {
           debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          trace() << "WSN_EVENT SEND packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+        << " destination:" << pkt->getDestination() << " current:" << self;
           toMacLayer(pkt, nextHop);
         } else {
 
@@ -331,7 +338,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
       else {
         Point stuckLocation = pkt->getStuckLocation();
         Point destLocation = pkt->getDestLocation();
-        if (G::distance(selfLocation, destLocation) < G::distance(stuckLocation, destLocation)) {
+        if (abs(G::distance(selfLocation, destLocation) - G::distance(stuckLocation, destLocation)) < -EPSILON) {
           pkt->setRoutingMode(MLP_GREEDY_ROUTING);
           processDataPacket(pkt);
         } else {
@@ -341,6 +348,8 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
             debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            trace() << "WSN_EVENT SEND packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+        << " destination:" << pkt->getDestination() << " current:" << self;
             toMacLayer(pkt, nextHop);
           }
         }
@@ -348,9 +357,11 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
     }
   }
   else {
+    trace() << "heading to the next stopping place";
     // heading to the next stopping place
     Point nextStoppingPlace = pkt->getNextStoppingPlace();
     if (reached(nextStoppingPlace)) {
+      trace() << "reached nextStoppingPlace";
 //      debugPoint(selfLocation, "green");
       Point startStableLocation = pkt->getStartStableLocation();
       double outDelta = pkt->getOutDelta();
@@ -365,7 +376,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
         for (int i = 0; i < path.size() - 1; i++) {
           if (path[i] == nextStoppingPlace) {
             j = i;
-            break;
+            // break;
           }
         }
 
@@ -379,6 +390,7 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
       }
     } else {
       if (pkt->getRoutingMode() == MLP_GREEDY_ROUTING) {
+        trace() << "MLP_GREEDY_ROUTING";
         int nextHop = -1;
         double minDist = G::distance(selfLocation, nextStoppingPlace);
 
@@ -392,8 +404,11 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
         }
         if (nextHop != -1) {
           debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          trace() << "WSN_EVENT SEND packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+        << " destination:" << pkt->getDestination() << " current:" << self;
           toMacLayer(pkt, nextHop);
         } else {
+          trace() << "setRoutingMode MLP_ROLLINGBALL_ROUTING";
           pkt->setRoutingMode(MLP_ROLLINGBALL_ROUTING);
           pkt->setStuckLocation(selfLocation);
 
@@ -412,16 +427,20 @@ void MlpRouting::processDataPacket(MlpPacket* pkt){
       }
       else {
         Point stuckLocation = pkt->getStuckLocation();
-        if (G::distance(selfLocation, nextStoppingPlace) < G::distance(stuckLocation, nextStoppingPlace)) {
+        if (abs(G::distance(selfLocation, nextStoppingPlace) - G::distance(stuckLocation, nextStoppingPlace)) < -EPSILON) {
+          trace() << "setRoutingMode MLP_GREEDY_ROUTING";
           pkt->setRoutingMode(MLP_GREEDY_ROUTING);
           processDataPacket(pkt);
         } else {
+          trace() << "findNextHopRollingBall";
           int nextHop = -1;
           Point nextCenter;
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
             debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            trace() << "WSN_EVENT SEND packetId:" << pkt->getPacketId() << " source:" << pkt->getSource()
+        << " destination:" << pkt->getDestination() << " current:" << self;
             toMacLayer(pkt, nextHop);
           }
         }
@@ -496,6 +515,7 @@ tuple<vector<Point>, int, double, int> MlpRouting::findPath(Point from, Point to
   int path = getRandomNumber(1, 2 * RANGE);
   aroundHoleRadius = maxRadius / (2 * RANGE) * path;
 
+  trace() << "aroundHoleRadius " << aroundHoleRadius;
   vector<Point> middlePath = findPathAroundHole(newFrom, newTo, hole, aroundHoleRadius);
 
   result.insert(result.end(), outCavern.begin(), outCavern.end());
@@ -505,6 +525,159 @@ tuple<vector<Point>, int, double, int> MlpRouting::findPath(Point from, Point to
   auto flattenResult = G::flatten(result);
 
   return make_tuple(flattenResult, outDelta, aroundHoleRadius, inDelta);
+}
+
+vector<Point> MlpRouting::findPathOutCavern2(Point from, Point to, vector<Point> &hole,
+                                vector<Point> &cavern, int delta) {
+  // delta from -RANGE to RANGE
+
+  tuple<Point, Point> cavernHash = G::hash(cavern);
+  if (outCavernCache.find(make_tuple(cavernHash, from, to, delta)) != outCavernCache.end()) {
+    return outCavernCache[make_tuple(cavernHash, from, to, delta)];
+  }
+
+  vector<int> shortestPath = G::shortestPathOutOrOnPolygon2(hole, from, to);
+  vector<Point> shortestPathPoint = G::shortestPathOutOrOnPolygon(hole, from, to);
+  debugPath(shortestPathPoint, "purple");
+  vector<int> L_out;
+
+  // gate
+  Point M = cavern[0], N = cavern[cavern.size() - 1];
+  // debugPoint(M, "green");
+  // debugPoint(N, "green");
+  LineSegment MN(M, N);
+  Point I;
+  for (int i = 0; i < shortestPath.size() - 1; i++) {
+    Point X = hole[shortestPath[i]], Y = hole[shortestPath[i + 1]];
+    LineSegment XY(X, Y);
+    // debugPoint(X, "blue");
+    L_out.push_back(shortestPath[i]);
+    if (G::doIntersect(XY, MN)) {
+      I = G::intersection(XY, MN);
+      L_out.push_back(shortestPath[i+1]);
+      break;
+    }
+  }
+
+  for (int k : L_out){
+    debugPoint(hole[k], "purple");
+  }
+  if (I.isUnspecified()) return vector<Point>(); // not gonna happen
+
+  for (int i=0; i<5; i++) trace() << "OK";
+  double baseK = G::distance(cavern[0], cavern[cavern.size() - 1]) / 8;
+  double r = (baseK / RANGE) * abs(delta);
+  vector<Point> result;
+  result.push_back(from);
+  if (L_out.empty()){
+    result.push_back(I);
+    return result;
+  }
+  // vector<Point> L_outPoint;
+  // for (int i=0; i<L_out.size(); i++){
+  //   L_outPoint.push_back(hole[L_out[i]]);
+  // }
+  // debugPath(L_outPoint, "blue");
+  for (int i=0; i<5; i++) trace() << "OK";
+
+  // if stay inside deep caverns
+  int startShift = 0;
+  Point SP_0 = hole[L_out[0]];
+  Point SP_1 = hole[L_out[1]];
+  Vector v_0(SP_0, SP_1);
+  int sign_0 = G::isMonotoneLine(L_out[0], L_out[1], hole);
+  trace() << "sign " << sign_0;
+  trace() << G::isMonotoneLine(L_out[0], L_out[1], hole);
+  trace() << G::isMonotoneLine(L_out[1], L_out[0], hole);
+  Point SP_01 = SP_0 + v_0.rotate(M_PI / 2) * (baseK * sign_0 / v_0.length());
+  Point SP_02 = SP_0 + v_0.rotate(M_PI / 2) * (baseK * sign_0 / v_0.length() / 2);
+  // debugPoint(SP_0, "blue");
+  // debugPoint(SP_1, "blue");
+  debugPoint(SP_01, "green");
+  debugPoint(SP_02, "green");
+  LineSegment XY(SP_01, SP_02);
+  if (G::is_intersect(XY, hole)){
+    for (int ii=0; ii<5; ii++) trace() << "is_intersect";
+    int i;
+    for (i=1; i<L_out.size() - 1; i++){
+      Point SP_i = hole[L_out[i]];
+      Vector v_i1(SP_i, hole[L_out[i-1]]);
+      int sign_i1 = G::isMonotoneLine(L_out[i], L_out[i-1], hole);
+      trace() << "sign " << sign_i1;
+      Point SP_i1 = SP_i + v_i1.rotate(M_PI / 2) * (baseK * sign_i1 / v_i1.length());
+      Vector v_i2(SP_i, hole[L_out[i+1]]);
+      int sign_i2 = G::isMonotoneLine(L_out[i], L_out[i+1], hole);
+      trace() << "sign " << sign_i2;
+      Point SP_i2 = SP_i + v_i2.rotate(M_PI / 2) * (baseK * sign_i2 / v_i2.length());
+      DirectedArc arc_i(SP_i1, SP_i2, SP_i, r);
+      if (!G::is_intersect(arc_i, hole)) break;
+      debugPoint(SP_i, "black");
+      debugPoint(SP_i1, "blue");
+      debugPoint(SP_i2, "green");
+      result.push_back(SP_i);
+    }
+    if (i<L_out.size() - 1) startShift = i;
+    else {
+      result.push_back(I);
+      return G::flatten(result);
+    }
+  }
+
+  trace() << "OK2";
+  trace() << startShift;
+
+  // debugPath(result, "black");
+
+  int nHole = hole.size();
+  vector<int> monoIndex;
+  int side = 0;
+  for (int i = startShift; i < L_out.size(); i++){
+    trace() << "index " << i;
+    for (int k : monoIndex){
+      trace() << k;
+    }
+    if (monoIndex.size() < 2){
+      monoIndex.push_back(L_out[i]);
+      if (monoIndex.size() == 2) side = G::isMonotoneLine(monoIndex[0], monoIndex[1], hole);
+    }
+    else {
+      int p_i1 = monoIndex[monoIndex.size()-1];
+      int p_i2 = L_out[i];
+      if ((G::isMonotoneLine(p_i1, p_i2, hole) == 0) || ((i == L_out.size()-1) && (monoIndex.size() >= 2))){
+        if (i == L_out.size()-1) monoIndex.push_back(L_out[i]);
+        vector<Point> monoLine;
+        for (int j=0; j<monoIndex.size(); j++){
+          monoLine.push_back(hole[monoIndex[j]]);
+          if (side < 0) debugPoint(hole[monoIndex[j]], "blue");
+          else debugPoint(hole[monoIndex[j]], "red");
+        }
+        double translateFactor = r;
+        if (side < 0) translateFactor = r - baseK;
+        auto translatedLine = G::translate(monoLine, translateFactor);
+        for (auto p: translatedLine){
+          result.push_back(p);
+        }
+        monoIndex.clear();
+      }
+      if (i < L_out.size()-1) monoIndex.push_back(L_out[i]);
+    }
+  }
+
+  for (int i=0; i<hole.size(); i+=20) {
+    debugPoint(hole[i], "gray");
+  }
+  debugPoint(hole[0], "gray");
+  for (int i=0; i<5; i++) trace() << "OK3";
+
+  if (!monoIndex.empty()){
+    result.push_back(hole[monoIndex[0]]);
+  }
+  auto flattenResult = G::flatten(result);
+
+  outCavernCache[make_tuple(cavernHash, from, to, delta)] = flattenResult;
+  flattenResult.push_back(hole[L_out[L_out.size()-1]]);
+
+  return flattenResult;
 }
 
 
