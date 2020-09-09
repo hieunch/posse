@@ -15,7 +15,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.js --exec \"node -r dotenv/config -r babel-register\"",
     "clean": "rimraf dist",
-    "build": "npm run clean && mkdir -p dist && babel src -s -D -d dist",
+    "build": "npm run clean && mkdir dist && babel src -s -D -d dist",
     "test": "jest --watch",
     "lint": "esw -w src test"
   },
@@ -41,10 +41,12 @@
     "express": "^4.15.2",
     "morgan": "^1.7.0",
     "node-cmd": "^3.0.0",
+    "node-command-line": "^1.0.2",
     "pug": "^2.0.0-beta11",
     "rimraf": "^2.6.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-eslint": "^7.2.3",
     "babel-jest": "^21.0.2",
     "babel-register": "^6.24.1",

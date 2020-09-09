@@ -65,11 +65,11 @@ routes.get('/result/energy/:sessionId', (req, res, next) => {
 
 routes.get('/result/statistics/:sessionId', (req, res, next) => {
   const sessionId = req.params.sessionId;
-  const ss = session.getSession(sessionId) || {status: "error", error: "invalid session id"};
-  if (ss.status !== 'completed') {
-    res.status(404).json(ss);
-    return;
-  }
+  // const ss = session.getSession(sessionId) || {status: "error", error: "invalid session id"};
+  // if (ss.status !== 'completed') {
+  //   res.status(404).json(ss);
+  //   return;
+  // }
 
   const filePath = path.resolve(`logs/${sessionId}_statistics.txt`);
 
@@ -105,10 +105,12 @@ routes.get('/result/log/:sessionId', (req, res, next) => {
 
 routes.get('/result/draw/:sessionId', (req, res, next) => {
   const sessionId = req.params.sessionId;
-  const ss = session.getSession(sessionId) || {status: "error", error: "invalid session id"};
-  if (ss.status !== 'completed') {
-    res.status(404).json(ss);
-    return;
+  if (sessionId !== '00000'){
+    const ss = session.getSession(sessionId) || {status: "error", error: "invalid session id"};
+    if (ss.status !== 'completed') {
+      res.status(404).json(ss);
+      return;
+    }
   }
 
   const filePath = path.resolve(`logs/${sessionId}_draw.txt`);

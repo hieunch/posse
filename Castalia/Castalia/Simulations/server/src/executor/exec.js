@@ -1,9 +1,7 @@
 import fs from 'fs'
-import cmd from 'node-cmd'
+import cmd from 'cmd-promise'
 import Promise from 'bluebird'
 import session from '../session'
-
-const getAsync = Promise.promisify(cmd.get, {multiArgs: true, context: cmd});
 
 const randomSessionId = (length) => {
   const possible = "ABCDEFGHIJ" +
@@ -42,7 +40,7 @@ function exec({config, sessionId}) {
   const {
     mode = "debug",
     network: {
-      fieldWidth, fieldHeight,
+      fieldWidth, fieldHeight, cellWidth, cellHeight,
       nodes, nodeConfig: {routingAlgorithm, macInterface}
     },
     simulation: {
@@ -50,7 +48,7 @@ function exec({config, sessionId}) {
     }
   } = config;
   console.log(traffic);
-  cmd.get(`rm -rf Castalia-Trace.txt`);
+  cmd(`rm -f Castalia-Trace.txt`);
 
   let fileName = `${sessionId}.ini`;
   const requestFileName = `logs/${sessionId}_request.txt`;
@@ -62,24 +60,43 @@ function exec({config, sessionId}) {
   let nextId = 0;
   let o2n = {}, n2o = {};
 
-  getAsync(`
-    cp template/template.ini ${fileName}
+
+  cmd(`
+    copy template\\template.ini ${fileName}
   `).then(() => {
     let writer = fs.createWriteStream(fileName, {'flags': 'a'});
 
+    if (mode === "debug") {
+      writer.write(`SN.node[*].Communication.Routing.collectTraceInfo = true\n`);
+    } else {
+      if (routingAlgorithm) {
+        if (routingAlgorithm.toLowerCase() === 'mlp2') {
+          writer.write(`SN.node[*].Communication.Routing.collectTraceInfo = true\n`);
+        }
+      }
+    }
+
     if (routingAlgorithm) {
       if (routingAlgorithm.toLowerCase() === 'greedy') {
-        writer.write(`SN.node[*].Communication.RoutingProtocolName = "GreedyRouting"\n`)
-      } else if (routingAlgorithm.toLowerCase() === 'gpsr') {
-        writer.write(`SN.node[*].Communication.RoutingProtocolName = "GpsrRouting"\n`)
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "greedyRouting"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'vhr') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "VHR"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'ich') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "ICH"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'ich2') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "ICH2"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'rollingball') {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "RollingBallRouting"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'stable') {
-        writer.write(`SN.node[*].Communication.RoutingProtocolName = "StableRouting"\n`)
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "StableRoutingv2"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'shortestpath') {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "ShortestPathRouting"\n`)
       } else if (routingAlgorithm.toLowerCase() === 'mlp') {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "MlpRouting"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'mlpv2') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "MlpRoutingv2"\n`)
+      } else if (routingAlgorithm.toLowerCase() === 'rainbow') {
+        writer.write(`SN.node[*].Communication.RoutingProtocolName = "RainbowRouting"\n`)
       } else {
         writer.write(`SN.node[*].Communication.RoutingProtocolName = "GpsrRouting"\n`)
       }
@@ -93,6 +110,8 @@ function exec({config, sessionId}) {
     writer.write(`SN.numNodes = ${nodes.length}\n`);
     writer.write(`SN.field_x = ${fieldWidth}\n`);
     writer.write(`SN.field_y = ${fieldHeight}\n`);
+    writer.write(`SN.cellWidth = ${cellWidth}\n`);
+    writer.write(`SN.cellHeight = ${cellHeight}\n`);
 
 
     for (let node of nodes) {
@@ -102,13 +121,16 @@ function exec({config, sessionId}) {
     }
 
 
-    writer.write(`sim-time-limit = 30s\n`);
+    writer.write(`sim-time-limit = 50s\n`);
 
     for (let i = 0; i < traffic.length; i++) {
       let pair = traffic[i];
       const {source, destination} = pair;
       writer.write(`SN.node[${source}].Application.isSource = true\n`);
       writer.write(`SN.node[${source}].Application.sink = "${destination}"\n`);
+
+      // writer.write(`SN.node[${source}].Application.packet_rate = 16\n`);
+      // writer.write(`SN.node[${source}].Application.constantDataPayload = 256\n`);
       // writer.write(`SN.node[${source}].Application.startSendingTime = ${5 + i * 10}\n`);
       // writer.write(`SN.node[${source}].Application.stopSendingTime = ${5 + i * 10 + 10}\n`);
     }
@@ -118,7 +140,7 @@ function exec({config, sessionId}) {
 
 
     if (mode === "debug") {
-      writer.write(`SN.node[*].Application.numPacketToSend = 10\n`);
+      writer.write(`SN.node[*].Application.numPacketToSend = 1\n`);
       writer.write(`SN.isDebugMode = true\n`)
     } else {
       writer.write(`SN.isDebugMode = false\n`)
@@ -127,12 +149,15 @@ function exec({config, sessionId}) {
     writer.end();
     session.markStatus(sessionId, "running", "Simulation is running...");
 
-
-    return getAsync(`
-      Castalia -i ${fileName} -c General
-    `)
+    fs.writeFile('D:\\SEDIC\\WSN\\posse\\Castalia\\Castalia\\CastaliaBin3.sh',
+     `Castalia -i ${fileName} -c General`, function (err) { 
+      if (err) throw err;
+    });
+    return cmd(`
+      start mingwenv3.cmd 
+    `) //D:\\SEDIC\\WSN\\posse\\Castalia\\Castalia\\
   }).then(() => {
-    cmd.get(`mv ${fileName} archive/`);
+    cmd(`move ${fileName} archives`);
 
     const eventTraceFileName = `logs/${sessionId}_eventTrace.txt`;
     const energyTraceFileName = `logs/${sessionId}_energyTrace.txt`;
@@ -233,7 +258,7 @@ function exec({config, sessionId}) {
           }
         }
         else if (type === 'STATISTICS') {
-          let regex = /id:(\d+) totalPacketReceived:(\d+) estimateLifetime:([\d\.]+) x:([\d\.]+) y:([\d\.]+) sumHopRatio:([\d\.]+) endPointCount:([\d\.]+) energyConsumed:([\d\.]+)/gi;
+          let regex = /id:(\d+) totalPacketReceived:(\d+) estimateLifetime:([\d\.]+) x:([\d\.]+) y:([\d\.]+) sumHopRatio:([\d\.]+) maxRatio:([\d\.]+) sumDistanceRatio:([\d\.]+) endPointCount:([\d\.]+) energyConsumed:([\d\.]+)/gi;
           let match = regex.exec(line);
 
           if (match) {
@@ -243,10 +268,12 @@ function exec({config, sessionId}) {
             let x = parseFloat(match[4]);
             let y = parseFloat(match[5]);
             let sumHopRatio = parseFloat(match[6]);
-            let endPointCount = parseFloat(match[7]);
-            let energyConsumed = parseFloat(match[8]);
+            let maxRatio = parseFloat(match[7]);
+            let sumDistanceRatio = parseFloat(match[8]);
+            let endPointCount = parseFloat(match[9]);
+            let energyConsumed = parseFloat(match[10]);
             statistics[id] = {id, totalPacketReceived,
-              estimateLifetime, x, y, sumHopRatio, endPointCount, energyConsumed}
+              estimateLifetime, x, y, sumHopRatio, maxRatio, sumDistanceRatio, endPointCount, energyConsumed}
           }
         }
       } else if (/WSN_LOG/gi.test(line)){
@@ -272,8 +299,13 @@ function exec({config, sessionId}) {
       const {config, sessionId} = queue.shift();
       exec({config, sessionId});
     }
+
+    cmd(`move Castalia-Trace.txt trace/${sessionId}-${routingAlgorithm}.txt`);
+    let writer = fs.createWriteStream("heatmap.bat", {'flags': 'a'});
+    // writer.write(`${Date.getTime()}`);
+    writer.write(`python heatmap.py logs/${sessionId}_statistics.txt ${fieldWidth} ${fieldHeight} ${cellWidth} ${cellHeight}\n`);
   }).catch(err => {
-    session.markStatus(sessionId, "error", err.toString());
+    session.markStatus(sessionId, "error", err);
     if (queue.length >= 1)  {
       const {config, sessionId} = queue.shift();
       exec({config, sessionId});

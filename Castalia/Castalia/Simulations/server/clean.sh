@@ -1,4 +1,4 @@
 rm *.txt
-rm archive/*.ini
+rm archives/*.ini
 rm logs/*
 rm *.ini
