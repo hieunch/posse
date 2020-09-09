@@ -135,6 +135,7 @@ class Network {
     this.height = height;
     this.range = range;
     this.nodeClickListeners = [];
+    this.nodeMouseOverListeners = [];
     this.mousedownListeners = [];
     this.mousemoveListeners = [];
     this.mouseupListeners = [];
@@ -146,12 +147,16 @@ class Network {
     this.nodeLayer = this.draw.group();
 
     this.nodes.forEach(node => {
+      node.circle2 = this.haloLayer.circle(10).center(node.x*1, node.y*1).fill('#1E90FF');
       node.circle = this.nodeLayer
-        .circle(NODE_CIRCLE_RADIUS * 2)
-        .center(node.x, node.y)
-        .fill('#b7b7b7');
+        .circle(8)//(NODE_CIRCLE_RADIUS * 2)
+        .center(node.x*1, node.y*1)
+        .fill('#ffffff');//('#b7b7b7');
       node.circle.click(() => {
         this.nodeClickListeners.forEach(listener => listener(node))
+      });
+      node.circle.on('mouseover', function() {
+        document.getElementById('node-id').value = node.id;
       })
     });
 
@@ -199,7 +204,7 @@ class Network {
           for (let node of this.nodes) {
             let {x, y} = node;
             for (let polyline of polylines) {
-              if (inPolygon([x, y], polyline.array().value)) {
+              if (inPolygon([x*1, y*1], polyline.array().value)) {
                 node.halo = this.haloLayer
                   .circle(4 * NODE_CIRCLE_RADIUS)
                   .center(x, y)
@@ -282,7 +287,7 @@ class Network {
           };
           node.circle = this.nodeLayer
             .circle(NODE_CIRCLE_RADIUS * 2)
-            .center(node.x, node.y)
+            .center(node.x*1, node.y*1)
             .fill('#b7b7b7');
           node.circle.click(() => {
             console.log(node);
@@ -312,6 +317,7 @@ class Network {
         .forEach(node => {
           node.halo.remove();
           node.circle.remove();
+          node.circle2.remove();
         });
       this.nodes = this.nodes
         .filter(node => !node.halo)
@@ -358,6 +364,56 @@ class Network {
 
   }
 
+  deleteHole(points) {
+    let polylines = [];
+    let bool = 0;
+    points.forEach(point => {
+      let {x, y} = {x: point[0], y: point[1]};
+      if (bool == 0) {
+        let polyline = this.selectLayer.polyline([x, y]).fill('#ffccca').stroke({width: 0.5});
+        polylines.push(polyline);
+        bool = 1;
+      } else {
+        let polyline = polylines[polylines.length - 1];
+        polyline.plot(polyline.array().value.concat([[x, y]])).fill('#ffccca').stroke({width: 0.5});
+      }
+    });
+
+    for (let node of this.nodes) {
+      let {x, y} = node;
+      for (let polyline of polylines) {
+        if (inPolygon([x, y], polyline.array().value)) {
+          node.halo = this.haloLayer
+            .circle(4 * NODE_CIRCLE_RADIUS)
+            .center(x, y)
+            .fill('#ff6262')
+        }
+      }
+    }
+
+    this.nodes
+      .filter(node => node.halo)
+      .forEach(node => {
+        node.halo.remove();
+        node.circle.remove();
+        node.circle2.remove();
+      });
+    this.nodes = this.nodes
+      .filter(node => !node.halo)
+      .map((node, i) => {
+        node.id = i;
+        return node;
+      });
+    this.nodes.forEach(node => {
+      node.circle.off('click');
+      node.circle.click(() => {
+        console.log(node);
+        this.nodeClickListeners.forEach(listener => listener(node))
+      })
+    });
+    polylines.forEach(p => p.remove());
+  }
+
   originPosition({x, y}) {
     let pt = this.svg.createSVGPoint();
     pt.x = x;
@@ -386,6 +442,14 @@ class Network {
 
   removeNodeClickListener(listener) {
     this.nodeClickListeners = this.nodeClickListeners.filter(l => l !== listener);
+  }
+
+  addNodeMouseOverListener(listener) {
+    this.nodeMouseOverListeners.push(listener);
+  }
+
+  removeNodeMouseOverListener(listener) {
+    this.nodeMouseOverListeners = this.nodeMouseOverListeners.filter(l => l !== listener);
   }
 
   addMousedownListener(listener) {
@@ -431,7 +495,7 @@ class Network {
 
   drawPoint({x, y, color}) {
     return this.nodeLayer
-      .circle(NODE_CIRCLE_RADIUS * 4)
+      .circle(12)//NODE_CIRCLE_RADIUS * 8)
       .center(x, y)
       .fill(color);
   }
@@ -449,7 +513,7 @@ class Network {
     }
 
     return this.nodes.filter(node => {
-      return inPolygon([node.x, node.y], this.polylineA.array().value)
+      return inPolygon([node.x*1, node.y*1], this.polylineA.array().value)
     })
   }
 
@@ -459,7 +523,7 @@ class Network {
     }
 
     return this.nodes.filter(node => {
-      return inPolygon([node.x, node.y], this.polylineB.array().value)
+      return inPolygon([node.x*1, node.y*1], this.polylineB.array().value)
     })
   }
 

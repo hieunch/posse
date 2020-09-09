@@ -31,6 +31,8 @@
 </div>
 <div class="row" id="content">
     <div id="panel" class="col-sm-3">
+        <label>Node ID:</label>
+        <input type="text" id="node-id" class="form-control" value="40" disabled>
         <div class="row">
             <div class="col-sm-6">
                 <label>Height:</label>
@@ -62,6 +64,38 @@
                         id="generate-file-btn"
                         type="button" class="btn btn-primary btn-block"
                         data-toggle="tooltip">Load from file
+                </button>
+            </div>
+
+        </div>
+        <div class="row" style="margin-top: 10px">
+            <div class="col">
+
+                <input type="file" class="" id="file-input2" style="display: none"/></span>
+                <button
+                        id="load-hole-btn"
+                        type="button" class="btn btn-primary btn-block"
+                        data-toggle="tooltip">Load hole
+                </button>
+            </div>
+
+        </div>
+        <div class="row" style="margin-top: 10px">
+            <div class="col">
+                <button
+                        id="display-btn"
+                        type="button" class="btn btn-primary btn-block"
+                        data-toggle="tooltip">Display result
+                </button>
+            </div>
+
+        </div>
+         <div class="row" style="margin-top: 10px">
+            <div class="col">
+                <button
+                        id="statistic-btn"
+                        type="button" class="btn btn-primary btn-block"
+                        data-toggle="tooltip">Handle statistics
                 </button>
             </div>
 
@@ -131,8 +165,13 @@
         <div class="form-group">
             <label for="ra-input">Routing algorithm</label>
             <select class="form-control" id="ra-input">
-                <option>mlp</option>
+            	<option>rainbow</option>
+                <option>MLPv2</option>
+                <option>ICH</option>
+                <option>ICH2</option>
+                <option>VHR</option>
                 <option>greedy</option>
+                <option>mlp</option>
                 <option>gpsr</option>
                 <option>rollingBall</option>
                 <option>stable</option>
@@ -158,6 +197,16 @@
                 </button>
             </div>
 
+        </div>
+        <div class="row">
+            <div class="col-sm-6">
+                <label>nCellHeight:</label>
+                <input type="text" id="nCellHeight" class="form-control" value="0" disabled>
+            </div>
+            <div class="col-sm-6">
+                <label>nCellWidth:</label>
+                <input type="text" id="nCellWidth" class="form-control" value="0" disabled>
+            </div>
         </div>
 
     </div>
