@@ -2,7 +2,10 @@
   "name": "express-babel",
   "version": "1.0.0",
   "description": "Using latest JavaScript features on the server",
-  "repository": "https://github.com/vmasto/express-babel",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vmasto/express-babel.git"
+  },
   "author": "Vassilis Mastorostergios <vmasto@gmail.com>",
   "license": "MIT",
   "main": "dist/index.js",
@@ -43,7 +46,8 @@
     "node-cmd": "^3.0.0",
     "node-command-line": "^1.0.2",
     "pug": "^2.0.0-beta11",
-    "rimraf": "^2.6.1"
+    "rimraf": "^2.6.1",
+    "cmd-promise": "^1.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -98,5 +102,12 @@
   },
   "jest": {
     "testEnvironment": "node"
+  },
+  "bugs": {
+    "url": "https://github.com/vmasto/express-babel/issues"
+  },
+  "homepage": "https://github.com/vmasto/express-babel#readme",
+  "directories": {
+    "test": "test"
   }
 }
