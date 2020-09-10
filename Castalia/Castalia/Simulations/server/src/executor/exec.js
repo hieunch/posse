@@ -159,6 +159,13 @@ function exec({config, sessionId}) {
   }).then(() => {
     cmd(`move ${fileName} archives`);
 
+    var mkdirp = require('mkdirp');
+	mkdirp('/logs', function(err) { 
+
+	    // path exists unless there was an error
+
+	});
+
     const eventTraceFileName = `logs/${sessionId}_eventTrace.txt`;
     const energyTraceFileName = `logs/${sessionId}_energyTrace.txt`;
     const nodeTraceFileName = `logs/${sessionId}_nodeTrace.txt`;
