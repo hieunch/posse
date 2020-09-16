@@ -24,6 +24,7 @@ void VirtualRouting::initialize()
 	netDataFrameOverhead = par("netDataFrameOverhead");
 	netBufferSize = par("netBufferSize");
 	numPacketReceived = 0;
+	deathTime = 10000;
 
 	/* Get a valid references to the Resources Manager module and the
 	 * Radio module, so that we can make direct calls to their public methods
@@ -70,7 +71,8 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 	Point nextHopLocation = GlobalLocationService::getLocation(destination);
 	// for (int i=0; i<10; i++) trace() << "OK2";
 	double distance = G::distance(selfLocation, nextHopLocation);
-	double powerNeeded = 3 * (50e-8 * byteLength * 8 + 100e-12 * byteLength * 8 * distance * distance);
+	double powerNeeded = 3 * 3600* (50e-8 * byteLength * 8 + 100e-12 * byteLength * 8 * distance * distance);
+	trace() << "byteLength " << byteLength << " powerNeeded " << powerNeeded;
 	resMgrModule->consumeEnergy(powerNeeded);
 	// --------------
 
@@ -178,7 +180,7 @@ void VirtualRouting::handleMessage(cMessage * msg)
       double byteLength = netPacket->getByteLength();
       Point nextHopLocation = GlobalLocationService::getLocation(info.lastHop);
       double distance = G::distance(selfLocation, nextHopLocation);
-      double powerNeeded = 3 * (50e-8 * byteLength * 8);
+      double powerNeeded = 3 * 3600*(50e-8 * byteLength * 8);
       resMgrModule->consumeEnergy(powerNeeded);
       // --------------
 
@@ -242,6 +244,29 @@ void VirtualRouting::handleMessage(cMessage * msg)
 
 		case OUT_OF_ENERGY:{
 			disabled = true;
+			for (int i=0; i<5; i++) trace1() << "OUT_OF_ENERGY";
+			deathTime = SIMTIME_DBL(simTime());
+			isPaused = true;
+			GlobalLocationService::removeNode(self);
+			for (int i=0; i<5; i++) trace1() << "removed";
+			setTimer(RESUME_APPLICATION, 10);
+
+			for (int i=0; i<GlobalLocationService::numNodes; i++) {
+				if (i == self) continue;
+				cModule* desModule = getParentModule()->getParentModule()->getParentModule()->getSubmodule("node", i)
+					->getSubmodule("Communication")->getSubmodule("Routing");
+				sendDirect(new cMessage("Destroy node message", REMOVE_NODE), desModule, "fromDirect");
+			}
+			break;
+		}
+
+		case RESUME_APPLICATION:{
+			isPaused = false;
+			break;
+		}
+
+		case REMOVE_NODE:{
+			if (!disabled) handleRemoveNodeMessage(msg);
 			break;
 		}
 
@@ -276,7 +301,7 @@ void VirtualRouting::finish()
 //    log() << resMgrModule->getSpentEnergy() << " days " << self;
 
   trace1() << "WSN_EVENT STATISTICS " << "id:" << self << " totalPacketReceived:" << numPacketReceived << " "
-    << "estimateLifetime:" << resMgrModule->estimateLifetime() << " x:" << selfLocation.x() << " y:" << selfLocation.y()
+    << "estimateLifetime:" << deathTime << " x:" << selfLocation.x() << " y:" << selfLocation.y()
     << " sumHopRatio:" << sumRatioEndCount << " maxRatio:" << maxRatio << " sumDistanceRatio:" << sumDistanceEndCount << " endPointCount:" << endCount
     << " energyConsumed:" << resMgrModule->getSpentEnergy();
 

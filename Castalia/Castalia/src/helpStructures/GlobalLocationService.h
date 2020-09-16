@@ -24,6 +24,7 @@ class GlobalLocationService {
   static std::vector<std::map<int, int>> colors;
 
  public:
+  static int numNodes;
 	GlobalLocationService();
   static void initialize(cModule*);
   static std::vector<NeighborRecord> getNeighborTable(int);
@@ -31,6 +32,7 @@ class GlobalLocationService {
   static int getId(Point point);
   static int getNumReceived(int);
   static void increaseNumReceived(int);
+  static void decreaseNumReceived(int);
   static map<tuple<int, int>, int> spCache;
   static int numHopShortestPath(int source, int destination);
   static bool isInSameCell(Point A, Point B);
@@ -38,6 +40,7 @@ class GlobalLocationService {
   static int getColor(int current, int destination);
   static int getColor(int node);
   static void increaseColor(int current, int destination);
+  static void removeNode(int nodeId);
 };
 
 #endif

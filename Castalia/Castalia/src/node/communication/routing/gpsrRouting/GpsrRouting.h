@@ -22,6 +22,7 @@ class GpsrRouting: public VirtualRouting {
   private:
 
     static int nextId;
+    static vector<int> isVisited;
     // Parameters
     int GpsrSetupFrameOverhead;	// in bytes
     bool collectTraceInfo;
@@ -54,7 +55,7 @@ class GpsrRouting: public VirtualRouting {
     int rightHandForward(GpsrPacket*, Point, int);
     int faceChange(GpsrPacket*, int);
     Point getNeighborLocation(int);
-    vector<NeighborRecord> getPlanarNeighbors();
+    vector<NeighborRecord> getPlanarNeighbors(GpsrPacket* dataPacket);
 };
 
 #endif				//GPSRROUTINGMODULE

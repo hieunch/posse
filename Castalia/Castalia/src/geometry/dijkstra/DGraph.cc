@@ -1,19 +1,11 @@
 #include <queue>
 #include "DGraph.h"
 
-DGraph::DGraph(vector<Point> polygon) {
-    adj = new list<pair_>[polygon.size() + 2];
+map<pair<Point, Point>, vector<int>> DGraph::spCache;
+map<pair<Point, Point>, vector<Point>> DGraph::spPointCache;
 
-    for (unsigned int i = 0; i < polygon.size(); i++) {
-        this->polygon.push_back(polygon[i]);
-        for (unsigned int j = i + 1; j < polygon.size(); j++) {
-            // if (G::isSegmentInsidePolygon(polygon[i], polygon[j], polygon) || j == i + 1) {
-            if (G::inOrOnPolygon(polygon, LineSegment(polygon[i], polygon[j])) || j == i+1) {
-                adj[i].push_back(make_pair(G::distance(polygon[i], polygon[j]), j));
-                adj[j].push_back(make_pair(G::distance(polygon[i], polygon[j]), i));
-            }
-        }
-    }
+DGraph::DGraph(vector<Point> polygon) {
+    this->polygon = polygon;
 }
 
 void DGraph::addVertexToPath(vector<int> parent, int j) {
@@ -39,6 +31,24 @@ int DGraph::getIndexInPolygon(Point s, vector<Point> p) {
     return NaN;
 }
 vector<Point> DGraph::shortestPath(Point s, Point t) {
+
+    if (spPointCache.find(pair<Point, Point>(s,t)) != spPointCache.end()) {
+        return spPointCache[pair<Point, Point>(s,t)];
+    }
+
+    adj = new list<pair_>[polygon.size() + 2];
+
+    for (unsigned int i = 0; i < polygon.size(); i++) {
+        // this->polygon.push_back(polygon[i]);
+        for (unsigned int j = i + 1; j < polygon.size(); j++) {
+            // if (G::isSegmentInsidePolygon(polygon[i], polygon[j], polygon) || j == i + 1) {
+            if (G::inOrOnPolygon(polygon, LineSegment(polygon[i], polygon[j])) || j == i+1) {
+                adj[i].push_back(make_pair(G::distance(polygon[i], polygon[j]), j));
+                adj[j].push_back(make_pair(G::distance(polygon[i], polygon[j]), i));
+            }
+        }
+    }
+
     vector<Point> new_polygon;
     for (auto it : polygon) new_polygon.push_back(it);
     if (!isVertexOfPolygon(s, polygon))
@@ -90,10 +100,31 @@ vector<Point> DGraph::shortestPath(Point s, Point t) {
     vector<Point> sp;
     for (auto it : STP)
         sp.push_back(new_polygon[it]);
+
+    spPointCache[pair<Point, Point>(s,t)] = sp;
+
     return sp;
 }
 
 vector<int> DGraph::shortestPath2(Point s, Point t) {
+
+    if (spCache.find(pair<Point, Point>(s,t)) != spCache.end()) {
+        return spCache[pair<Point, Point>(s,t)];
+    }
+
+    adj = new list<pair_>[polygon.size() + 2];
+
+    for (unsigned int i = 0; i < polygon.size(); i++) {
+        // this->polygon.push_back(polygon[i]);
+        for (unsigned int j = i + 1; j < polygon.size(); j++) {
+            // if (G::isSegmentInsidePolygon(polygon[i], polygon[j], polygon) || j == i + 1) {
+            if (G::inOrOnPolygon(polygon, LineSegment(polygon[i], polygon[j])) || j == i+1) {
+                adj[i].push_back(make_pair(G::distance(polygon[i], polygon[j]), j));
+                adj[j].push_back(make_pair(G::distance(polygon[i], polygon[j]), i));
+            }
+        }
+    }
+
     vector<Point> new_polygon;
     for (auto it : polygon) new_polygon.push_back(it);
     if (!isVertexOfPolygon(s, polygon))
@@ -102,6 +133,7 @@ vector<int> DGraph::shortestPath2(Point s, Point t) {
         new_polygon.push_back(t);
     unsigned int s_ = getIndexInPolygon(s, new_polygon);
     unsigned int t_ = getIndexInPolygon(t, new_polygon);
+
     for (unsigned int i = 0; i < new_polygon.size(), i != s_; i++) {
         // if (G::isSegmentInsidePolygon(new_polygon[i], s, polygon)) {
         if (G::inOrOnPolygon(polygon, LineSegment(polygon[i], s))) {
@@ -142,5 +174,8 @@ vector<int> DGraph::shortestPath2(Point s, Point t) {
 
     addVertexToPath(parent, t_);
     STP.push_back(t_);
+
+    spCache[pair<Point, Point>(s,t)] = STP;
+
     return STP;
 }

@@ -3,6 +3,7 @@
 
 cModule *GlobalLocationService::networkModule;
 bool GlobalLocationService::initialized = false;
+int GlobalLocationService::numNodes = false;
 double GlobalLocationService::cellWidth = 1;
 double GlobalLocationService::cellHeight = 1;
 std::vector<int> GlobalLocationService::numReceiveds;
@@ -17,7 +18,7 @@ void GlobalLocationService::initialize(cModule *module) {
     networkModule = module;
     initialized = true;
 
-    int numNodes = (int) module->par("numNodes").longValue();
+    numNodes = (int) module->par("numNodes").longValue();
     locations.assign(numNodes, Point());
     neighborTables.assign(numNodes, std::vector<NeighborRecord>());
     numReceiveds.assign(numNodes, 0);
@@ -40,6 +41,20 @@ void GlobalLocationService::initialize(cModule *module) {
     }
   }
 }
+
+void GlobalLocationService::removeNode(int nodeId) {
+  for (auto record : neighborTables[nodeId]) {
+    int neighborId = record.id;
+    for(vector<NeighborRecord>::iterator iter = neighborTables[neighborId].begin(); iter != neighborTables[neighborId].end(); ++iter) {
+      if((*iter).id == nodeId) {
+        neighborTables[neighborId].erase(iter);
+        break;
+      }
+    }
+  }
+  neighborTables[nodeId].clear();
+}
+
 std::vector<NeighborRecord> GlobalLocationService::getNeighborTable(int id) {
   return neighborTables[id];
 }
@@ -63,6 +78,10 @@ int GlobalLocationService::getNumReceived(int id) {
 
 void GlobalLocationService::increaseNumReceived(int id){
   numReceiveds[id]++;
+}
+
+void GlobalLocationService::decreaseNumReceived(int id){
+  numReceiveds[id]--;
 }
 
 int GlobalLocationService::numHopShortestPath(int source, int destination) {

@@ -11,6 +11,8 @@ using namespace std;
 
 typedef pair<double, int> pair_;
 class DGraph {
+    static map<pair<Point, Point>, vector<int>> spCache;
+    static map<pair<Point, Point>, vector<Point>> spPointCache;
     list<pair_> *adj;
     vector<Point> polygon;
     vector<int> STP;

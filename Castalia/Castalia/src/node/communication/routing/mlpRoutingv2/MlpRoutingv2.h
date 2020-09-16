@@ -31,7 +31,7 @@ class MlpRoutingv2: public VirtualRouting {
     static int cnt;
     static int nextId;
     static double eps;
-    const int RANGE = 100;
+    const int RANGE = 20;
     double holeDiameter;
     // Parameters
     int MlpSetupFrameOverhead;	// in bytes
@@ -54,6 +54,7 @@ class MlpRoutingv2: public VirtualRouting {
     void fromApplicationLayer(cPacket *, const char *);
     void fromMacLayer(cPacket *, int, double, double);
     void handleNetworkControlCommand(cMessage *);
+    void handleRemoveNodeMessage(cMessage *);
     void sendTopologySetupPacket();
     void timerFiredCallback(int);
     void processBufferedPacket();

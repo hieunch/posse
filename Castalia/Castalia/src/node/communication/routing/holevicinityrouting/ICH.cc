@@ -44,6 +44,7 @@ void ICH::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
     if (netPacket) {
         recvData(netPacket);
     } else {
+        numPacketReceived--;
         if (strcmp(pkt->getName(), "BroadcastHCI") == 0) {
             auto bh_pkt = static_cast<BoundHolePacket*>(pkt);
             recvHCI(bh_pkt);
@@ -519,7 +520,7 @@ void ICH::sendData(ICHDataPacket *pkt) {
 int ICH::findNextHop(ICHDataPacket* pkt, Point s, Point d, vector<Point> sp){
     vector<Point> holePoints;
     for (Point p : hole) holePoints.push_back(p);
-    int nextHop;
+    int nextHop = -1;
     Point I;
     double k = pkt->getScaleFactor();
     if (k != 1) {    // already has scale factor
@@ -658,13 +659,13 @@ tuple<vector<Point>, vector<double>> ICH::findHomotheticArray(vector<Point> v, P
 }
 
 Point ICH::findHomotheticCenter(vector<Point> v, double sign) {
-    Point I = Point(0, 0);
-    double range = 100;
+    Point I = Point();
+    double range = 0.3;
     vector<Point> v_new;
     for (Point p : v) v_new.push_back(p);
     Point v_a, v_b;
 
-    if (v.size() < 2) return I;
+    if (v.size() < 2) return v[0];
     else if (v.size() == 2) {
         Point v_a = v[0] + Vector(v[1], v[0]).rotate(M_PI / 2 * sign) * range;
         Point v_b = v[1] + Vector(v[0], v[1]).rotate(-M_PI / 2 * sign) * range;
@@ -1003,6 +1004,8 @@ int ICH::getNextHopGreedy(ICHDataPacket* dataPacket, Point destLocation){
     }
   }
 
+  return nextHop;
+
   if (nextHop != -1) {
     return nextHop;
   } else {
@@ -1029,6 +1032,7 @@ int ICH::getNextHopGreedy(ICHDataPacket* dataPacket, Point destLocation){
 }
 
 int ICH::getNextHopRollingBall(ICHDataPacket* dataPacket, Point destLocation){
+    return getNextHopGreedy(dataPacket, destLocation);
     for (int i=0; i<3; i++) trace() << "get next hop";
     Point stuckLocation = dataPacket->getStuckLocation();
     trace() << "stuckLocation " << stuckLocation;

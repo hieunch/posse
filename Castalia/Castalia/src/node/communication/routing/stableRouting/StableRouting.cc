@@ -105,6 +105,7 @@ void StableRouting::fromApplicationLayer(cPacket * pkt, const char *destination)
 void StableRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
   DiscoverHolePacket *discoverHolePacket = dynamic_cast <DiscoverHolePacket*>(pkt);
   if (discoverHolePacket) {
+    numPacketReceived--;
     processDiscoverHolePacket(discoverHolePacket);
     return;
   }

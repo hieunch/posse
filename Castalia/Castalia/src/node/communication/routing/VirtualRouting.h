@@ -46,6 +46,7 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 	int netDataFrameOverhead;	//in bytes
 	int netBufferSize;			//in # of messages
 	unsigned int currentSequenceNumber;
+	double deathTime;
 
 	int numPacketReceived;
 
@@ -111,7 +112,8 @@ class VirtualRouting: public CastaliaModule, public TimerService {
 
 	virtual void handleMacControlMessage(cMessage *);
 	virtual void handleRadioControlMessage(cMessage *);
-	virtual void handleNetworkControlCommand(cMessage *) { }
+	virtual void handleNetworkControlCommand(cMessage *) { };
+	virtual void handleRemoveNodeMessage(cMessage *) { }
 };
 
 #endif				//_VIRTUALROUTING_H_

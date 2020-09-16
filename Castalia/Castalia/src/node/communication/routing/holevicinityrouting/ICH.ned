@@ -9,6 +9,6 @@ simple ICH extends BoundHole
         @class(ICH);
         storageOpt = default(1);
         double broadcastFactor = default(10);
-        double scaleFactorCave = default(1.3);
+        double scaleFactorCave = default(1.5);
         double scaleFactorConvex = default(1.3);
 }

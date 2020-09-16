@@ -83,10 +83,11 @@ void RainbowRouting::fromMacLayer(cPacket * pkt, int macAddress, double rssi, do
 
 void RainbowRouting::finishSpecific() {
   int color = GlobalLocationService::getColor(self);
-  if (color == 0) debugPoint(selfLocation, "blue");
-  else if (color == 1) debugPoint(selfLocation, "green");
-  else if (color == 2) debugPoint(selfLocation, "yellow");
-  else if (color == 3) debugPoint(selfLocation, "red");
+  // if (color == 0) debugPoint(selfLocation, "blue");
+  // else if (color == 1) debugPoint(selfLocation, "green");
+  // else if (color == 2) debugPoint(selfLocation, "yellow");
+  // else if (color == 3) debugPoint(selfLocation, "red");
+  if (GlobalLocationService::getNumReceived(self) > 0) debugPoint(selfLocation, "red");
   // trace() << "final color " << color;
   trace() << "WSN_EVENT FINAL" << " id:" << self << " x:" << selfLocation.x() << " y:" << selfLocation.y() << " deathTime:-1";
 }

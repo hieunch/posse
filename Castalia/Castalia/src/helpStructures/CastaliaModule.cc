@@ -14,6 +14,8 @@
 
 #define CASTALIA_PREFIX "Castalia|\t"
 
+bool CastaliaModule::isPaused = false;
+
 void CastaliaModule::finish()
 {
 	finishSpecific();

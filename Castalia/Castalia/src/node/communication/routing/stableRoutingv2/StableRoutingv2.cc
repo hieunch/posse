@@ -367,21 +367,21 @@ void StableRoutingv2::processDataPacket(MlpPacket* pkt){
         trace() << "MLP_GREEDY_ROUTING";
         int nextHop = -1;
         double minDist = G::distance(selfLocation, nextStoppingPlace);
-        LineSegment XY(previousStoppingPlace, nextStoppingPlace);
+        // LineSegment XY(previousStoppingPlace, nextStoppingPlace);
 
-        for (auto &neighbor: neighborTable) {
-          // if (GlobalLocationService::isInSameCell(neighbor.location, nextStoppingPlace)) {
-          //     nextHop = neighbor.id;
-          //     break;
-          // }
-          if (G::distanceToLineSegment(XY, neighbor.location) > 20) continue;
-          double dist = G::distance(nextStoppingPlace, neighbor.location);
+        // for (auto &neighbor: neighborTable) {
+        //   // if (GlobalLocationService::isInSameCell(neighbor.location, nextStoppingPlace)) {
+        //   //     nextHop = neighbor.id;
+        //   //     break;
+        //   // }
+        //   if (G::distanceToLineSegment(XY, neighbor.location) > 20) continue;
+        //   double dist = G::distance(nextStoppingPlace, neighbor.location);
 
-          if (dist < minDist) {
-            minDist = dist;
-            nextHop = neighbor.id;
-          }
-        }
+        //   if (dist < minDist) {
+        //     minDist = dist;
+        //     nextHop = neighbor.id;
+        //   }
+        // }
 
         if (nextHop == -1) for (auto &neighbor: neighborTable) {
           double dist = G::distance(nextStoppingPlace, neighbor.location);
@@ -507,9 +507,9 @@ pair<vector<Point>, int> StableRoutingv2::findPathOutCavern2(Point from, Point t
   vector<Point> cavernPoints;
   for (Point p : cavern) cavernPoints.push_back(p);
   tuple<Point, Point> cavernHash = G::hash(cavernPoints);
-  if (outCavernCache.find(make_tuple(cavernHash, from, to, delta)) != outCavernCache.end()) {
-    return outCavernCache[make_tuple(cavernHash, from, to, delta)];
-  }
+  // if (outCavernCache.find(make_tuple(cavernHash, from, to, delta)) != outCavernCache.end()) {
+  //   return outCavernCache[make_tuple(cavernHash, from, to, delta)];
+  // }
 
   vector<int> shortestPath;
   int nHole = hole.size();
@@ -789,7 +789,7 @@ pair<vector<Point>, int> StableRoutingv2::findPathOutCavern2(Point from, Point t
 
   flattenResult.push_back(cavern[L_out[L_out.size()-1]]);
   auto result_pair = std::make_pair(flattenResult, side);
-  outCavernCache[make_tuple(cavernHash, from, to, delta)] = result_pair;
+  // outCavernCache[make_tuple(cavernHash, from, to, delta)] = result_pair;
 
   return result_pair;
 }

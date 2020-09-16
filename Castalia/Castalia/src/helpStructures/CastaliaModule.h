@@ -77,6 +77,7 @@ class CastaliaModule: public virtual cSimpleModule {
 	void collectHistogramNocheck(const char *, int, double);
 
  protected:
+ 	static bool isPaused;
 	virtual void finish();
 	virtual void finishSpecific() { };
 	std::ostream & trace();

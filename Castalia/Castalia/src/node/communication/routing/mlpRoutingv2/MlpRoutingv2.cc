@@ -18,6 +18,13 @@ void MlpRoutingv2::startup(){
   receivedHole = false;
 }
 
+void MlpRoutingv2::handleRemoveNodeMessage(cMessage *msg) {
+  // hole.clear();
+  // caverns.clear();
+  // setTimer(DISCOVER_HOLE_START, 1);
+  // receivedHole = false;
+}
+
 void MlpRoutingv2::timerFiredCallback(int index){
   switch(index){
     case DISCOVER_HOLE_START: {
@@ -98,6 +105,8 @@ void MlpRoutingv2::fromApplicationLayer(cPacket * pkt, const char *destination){
 void MlpRoutingv2::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
   DiscoverHolePacket *discoverHolePacket = dynamic_cast <DiscoverHolePacket*>(pkt);
   if (discoverHolePacket) {
+    numPacketReceived--;
+    GlobalLocationService::decreaseNumReceived(self);
     processDiscoverHolePacket(discoverHolePacket);
     return;
   }
@@ -137,6 +146,7 @@ void MlpRoutingv2::fromMacLayer(cPacket * pkt, int macAddress, double rssi, doub
 }
 
 void MlpRoutingv2::finishSpecific() {
+  if (GlobalLocationService::getNumReceived(self) > 0) debugPoint(selfLocation, "red");
   trace() << "WSN_EVENT FINAL" << " id:" << self << " x:" << selfLocation.x() << " y:" << selfLocation.y() << " deathTime:-1";
 //  log() << "done man ";
 }
@@ -362,7 +372,6 @@ void MlpRoutingv2::processDataPacket(MlpPacket* pkt){
       // debugPoint(path[j + 1], "black");
       pkt->setNextStoppingPlaceId(j + 1);
       pkt->setPreviousStoppingPlace(path[j]);
-      pkt->setNextStoppingPlace(Point());
       processDataPacket(pkt);
       
     } else {
@@ -445,7 +454,7 @@ vector<Point> MlpRoutingv2::findPath(Point from, Point to, vector<Point> &hole, 
   vector<Point> inCavern = {};
   Point newFrom = from, newTo = to;
 
-  int delta = id%RANGE;//getRandomNumber(0, RANGE);
+  int delta = getRandomNumber(0, RANGE);
   int side_out = 0;
   double translateFactor = -1;
   log () << rand();
@@ -464,7 +473,7 @@ vector<Point> MlpRoutingv2::findPath(Point from, Point to, vector<Point> &hole, 
     }
   }
 
-  int path = RANGE-id%RANGE;//getRandomNumber(0, RANGE);
+  int path = getRandomNumber(0, RANGE);
   // if (side_out == 1) path = delta;
   // else if (side_out == -1) path = RANGE-delta;
   if (side_out != 0) path = RANGE-delta;
@@ -717,7 +726,7 @@ tuple<vector<Point>, int, double> MlpRoutingv2::findPathOutCavern2(Point from, P
   }
   // double angle = G::angle(&hole[L_out[0]], &from, &hole[L_out[1]]);
   // trace() << "l_out " << l_out << " theta " << theta << " angle " << angle;
-  double baseK = min(eps*l_out/(theta + 4), 10000.0);//, G::distance(cavern[0], cavern[cavern.size() - 1]) / 2);
+  double baseK = min(eps*l_out/(theta + 4), 160.0);//, G::distance(cavern[0], cavern[cavern.size() - 1]) / 2);
   trace() << "baseK " << baseK;
   trace() << "theta " << theta << " l_out " << l_out;
   
@@ -804,6 +813,7 @@ tuple<vector<Point>, int, double> MlpRoutingv2::findPathOutCavern2(Point from, P
     // for (int k : monoIndex){
     //   trace() << k;
     // }
+    trace() << cavern[L_out[i]];
     if (monoIndex.size() == 0){
       monoIndex.push_back(L_out[i]);
     }
