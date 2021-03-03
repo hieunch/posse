@@ -41,7 +41,7 @@
     "express": "^4.15.2",
     "morgan": "^1.7.0",
     "node-cmd": "^3.0.0",
-    "pug": "^2.0.0-beta11",
+    "pug": "^3.0.1",
     "rimraf": "^2.6.1"
   },
   "devDependencies": {
