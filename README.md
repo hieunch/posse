@@ -1,6 +1,7 @@
 
-## Posse
-A toolbox for developing, debugging and evaluating routing algorithms in wireless sensor networks, especially for those routing algorithms dealing with the presence of holes.
+## About
+Posse is a toolbox for developing, debugging and evaluating routing algorithms in the presence of holes in wireless sensor networks.
+This is a part of my undergrad research topic. We published a paper with most of the programming and visualization works done by Posse [Stable low-stretch routing scheme for wireless sensor networks with a large hole of complicated shape](https://ieeexplore.ieee.org/document/8606882/references#references).
 
 ## Components
 
