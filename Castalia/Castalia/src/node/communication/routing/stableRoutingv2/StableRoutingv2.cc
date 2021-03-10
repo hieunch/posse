@@ -16,6 +16,15 @@ void StableRoutingv2::startup(){
   receivedHole = false;
 }
 
+void StableRoutingv2::handleRemoveNodeMessage(cMessage *msg) {
+  // hole.clear();
+  // hole0.clear();
+  // caverns.clear();
+  // DGraph::clearCache();
+  // setTimer(DISCOVER_HOLE_START, 0);
+  // receivedHole = false;
+}
+
 void StableRoutingv2::timerFiredCallback(int index){
   switch(index){
     case DISCOVER_HOLE_START: {
@@ -86,6 +95,7 @@ void StableRoutingv2::fromApplicationLayer(cPacket * pkt, const char *destinatio
 
   dataPacket->setDestLocation(GlobalLocationService::getLocation(atoi(destination)));
   dataPacket->setPacketId(nextId++);
+  dataPacket->setIsDataPacket(true);
 
 
   processDataPacket(dataPacket);
@@ -140,7 +150,8 @@ void StableRoutingv2::finishSpecific() {
 }
 
 void StableRoutingv2::processHole(DiscoverHolePacket* pkt) {
-
+  hole.clear();
+  caverns.clear();
 
   Point ballCenter = pkt->getBallCenter();
   string pathString(pkt->getPath());
@@ -218,6 +229,7 @@ void StableRoutingv2::processHole(DiscoverHolePacket* pkt) {
 
   receivedHole = true;
   hole = points;
+  if (hole0.empty()) hole0 = hole;
   holeDiameter = G::diameter(convexHull);
   double distanceToHole = G::distanceToPolygon(convexHull, selfLocation);
 
@@ -303,6 +315,8 @@ void StableRoutingv2::propagateHole(DiscoverHolePacket *pkt) {
 
 void StableRoutingv2::processDataPacket(MlpPacket* pkt){
   std::clock_t start_time = std::clock();
+
+  // if (isPaused || hole0.empty()) return;
 
   trace() << "PROCESS HOLE";
   Point destLocation = pkt->getDestLocation();

@@ -47,9 +47,13 @@ void SimplePairApplication::fromNetworkLayer(ApplicationPacket * rcvPacket,
 void SimplePairApplication::timerFiredCallback(int index) {
 	switch (index) {
 		case SEND_PACKET:{
+			if (isPaused) {
+				setTimer(RESUME_APPLICATION, 2);
+				break;
+			}
       // just send once
 			trace() << "Sending packet #" << dataSN;
-			if (!isPaused) toNetworkLayer(createGenericDataPacket(100, dataSN, 256), par("sink"));
+			toNetworkLayer(createGenericDataPacket(100, dataSN, 256), par("sink"));
 			dataSN++;
 
             double packetSpacing = 1 / (packetRate * 1024 / 256);
@@ -59,6 +63,11 @@ void SimplePairApplication::timerFiredCallback(int index) {
 //			    }
 			}
 			break;
+		}
+
+		case RESUME_APPLICATION:{
+			isPaused = false;
+			setTimer(SEND_PACKET, 0);
 		}
 	}
 }

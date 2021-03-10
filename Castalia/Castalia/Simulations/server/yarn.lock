@@ -1051,6 +1051,11 @@ cliui@^3.2.0:
     strip-ansi "^3.0.1"
     wrap-ansi "^2.0.0"
 
+cmd-promise@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/cmd-promise/-/cmd-promise-1.2.0.tgz#3cf5132220198b51c16da92de386a0d3743dbb5c"
+  integrity sha1-PPUTIiAZi1HBbakt44ag03Q9u1w=
+
 co@^4.6.0:
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/co/-/co-4.6.0.tgz#6ea6bdf3d853ae54ccb8e47bfa0bf3f9031fb184"

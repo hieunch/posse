@@ -16,6 +16,7 @@
 #include <map>
 #include "CastaliaModule.h"
 #include "ResourceManagerMessage_m.h"
+#include "GlobalLocationService.h"
 
 using namespace std;
 
@@ -44,6 +45,8 @@ class ResourceManager: public CastaliaModule {
 
 	cMessage *energyMsg;
 	bool disabled;
+
+	static int numDead;
 
  protected:
 	virtual void initialize();

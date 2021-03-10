@@ -20,8 +20,10 @@ void MlpRoutingv2::startup(){
 
 void MlpRoutingv2::handleRemoveNodeMessage(cMessage *msg) {
   // hole.clear();
+  // hole0.clear();
   // caverns.clear();
-  // setTimer(DISCOVER_HOLE_START, 1);
+  // DGraph::clearCache();
+  // setTimer(DISCOVER_HOLE_START, 0);
   // receivedHole = false;
 }
 
@@ -66,6 +68,13 @@ void MlpRoutingv2::timerFiredCallback(int index){
 
       break;
     }
+
+    case TRACE_ENERGY:{
+			// trace1() << "REMAINING_ENERGY " << resMgrModule->getRemainingEnergy() << " LIFETIME " << resMgrModule->estimateLifetime();
+			// setTimer(TRACE_ENERGY, 10);
+			break;
+		}
+
     default: break;
   }
 }
@@ -95,6 +104,7 @@ void MlpRoutingv2::fromApplicationLayer(cPacket * pkt, const char *destination){
 
   dataPacket->setDestLocation(GlobalLocationService::getLocation(atoi(destination)));
   dataPacket->setPacketId(nextId++);
+  dataPacket->setIsDataPacket(true);
 
 
   processDataPacket(dataPacket);
@@ -105,7 +115,7 @@ void MlpRoutingv2::fromApplicationLayer(cPacket * pkt, const char *destination){
 void MlpRoutingv2::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
   DiscoverHolePacket *discoverHolePacket = dynamic_cast <DiscoverHolePacket*>(pkt);
   if (discoverHolePacket) {
-    numPacketReceived--;
+    // if (!isPaused) numPacketReceived--;
     GlobalLocationService::decreaseNumReceived(self);
     processDiscoverHolePacket(discoverHolePacket);
     return;
@@ -152,7 +162,8 @@ void MlpRoutingv2::finishSpecific() {
 }
 
 void MlpRoutingv2::processHole(DiscoverHolePacket* pkt) {
-
+  hole.clear();
+  caverns.clear();
 
   Point ballCenter = pkt->getBallCenter();
   string pathString(pkt->getPath());
@@ -230,6 +241,7 @@ void MlpRoutingv2::processHole(DiscoverHolePacket* pkt) {
 
   receivedHole = true;
   hole = points;
+  if (hole0.empty()) hole0 = hole;
   holeDiameter = G::diameter(convexHull);
   double distanceToHole = G::distanceToPolygon(convexHull, selfLocation);
 
@@ -315,6 +327,7 @@ void MlpRoutingv2::propagateHole(DiscoverHolePacket *pkt) {
 
 void MlpRoutingv2::processDataPacket(MlpPacket* pkt){
   std::clock_t start_time = std::clock();
+  // if (isPaused || hole0.empty()) return;
 
   trace() << "PROCESS HOLE";
   Point destLocation = pkt->getDestLocation();

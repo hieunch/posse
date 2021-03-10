@@ -7,6 +7,8 @@ int GlobalLocationService::numNodes = false;
 double GlobalLocationService::cellWidth = 1;
 double GlobalLocationService::cellHeight = 1;
 std::vector<int> GlobalLocationService::numReceiveds;
+std::vector<double> GlobalLocationService::sumRatios;
+int GlobalLocationService::numEnds;
 std::vector<std::map<int, int>> GlobalLocationService::colors;
 std::vector<Point> GlobalLocationService::locations;
 std::vector<std::vector<NeighborRecord>> GlobalLocationService::neighborTables;
@@ -22,6 +24,8 @@ void GlobalLocationService::initialize(cModule *module) {
     locations.assign(numNodes, Point());
     neighborTables.assign(numNodes, std::vector<NeighborRecord>());
     numReceiveds.assign(numNodes, 0);
+    sumRatios.assign(numNodes, 0);
+    numEnds = 0;
     colors.assign(numNodes, std::map<int, int>());
     for (int i = 0; i < numNodes; i++) {
       double xCoor = networkModule->getSubmodule("node", i)->par("xCoor").doubleValue();
@@ -82,6 +86,40 @@ void GlobalLocationService::increaseNumReceived(int id){
 
 void GlobalLocationService::decreaseNumReceived(int id){
   numReceiveds[id]--;
+}
+
+int GlobalLocationService::getTotalNumReceived() {
+  int total = 0;
+  for (int num : numReceiveds) total += num;
+  return total;
+}
+
+double GlobalLocationService::getSumRatio(int id) {
+  if (id == -1) return 0;
+  return sumRatios[id];
+}
+
+void GlobalLocationService::increaseSumRatio(int id, double ratio){
+  sumRatios[id] += ratio;
+  numEnds++;
+}
+
+double GlobalLocationService::getTotalSumRatio() {
+  double total = 0;
+  for (double ratio : sumRatios) total += ratio;
+  return total;
+}
+
+double GlobalLocationService::getStretch() {
+  double totalSumRatio = getTotalSumRatio();
+  return totalSumRatio/numEnds;
+}
+
+double GlobalLocationService::getBalancingIndex() {
+  int total2 = 0;
+  for (int num : numReceiveds) total2 += num*num;
+  int total = getTotalNumReceived();
+  return 1.*total*total/numNodes/total2;
 }
 
 int GlobalLocationService::numHopShortestPath(int source, int destination) {

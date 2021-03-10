@@ -48,7 +48,9 @@ enum CastaliaMessageTypes {
 
 	APPLICATION_PACKET = 50,
 	RESUME_APPLICATION = 51,
-	REMOVE_NODE = 52
+	REMOVE_NODE = 52,
+
+	TRACE_ENERGY = 60
 };
 
 #endif

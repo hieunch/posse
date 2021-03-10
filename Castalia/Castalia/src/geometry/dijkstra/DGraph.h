@@ -23,6 +23,7 @@ public:
     DGraph(vector<Point> hole);
     vector<Point> shortestPath(Point s, Point t);
     vector<int> shortestPath2(Point s, Point t);
+    static void clearCache();
 };
 
 #endif /* GEOMETRY_DIJKSTRA_DGRAPH_H_ */

@@ -8,6 +8,11 @@ DGraph::DGraph(vector<Point> polygon) {
     this->polygon = polygon;
 }
 
+void DGraph::clearCache() {
+    spCache.clear();
+    spPointCache.clear();
+}
+
 void DGraph::addVertexToPath(vector<int> parent, int j) {
     if (parent[j] != -1) {
         addVertexToPath(parent, parent[j]);

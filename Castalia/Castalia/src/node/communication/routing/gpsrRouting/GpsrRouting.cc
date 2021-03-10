@@ -56,6 +56,7 @@ void GpsrRouting::fromApplicationLayer(cPacket * pkt, const char *destination){
   dataPacket->setPreviousLocation(Point()); // previous is unspecified
   dataPacket->setPreviousId(-1); // no previous node
   dataPacket->setPacketId(nextId++);
+  dataPacket->setIsDataPacket(true);
 
   int nextHop = getNextHop(dataPacket);
   if (nextHop != -1) {
@@ -219,8 +220,8 @@ int GpsrRouting::rightHandForward(GpsrPacket* dataPacket, Point pivotLocation, i
     }
     Point neighborLocation = neighbor.location;
     double bneighbor = G::norm(atan2(selfLocation.y() - neighborLocation.y(), selfLocation.x() - neighborLocation.x()));
-    double angle = G::norm(bneighbor - bpivot);
-    // double angle = G::norm(- bneighbor + bpivot);
+    // double angle = G::norm(bneighbor - bpivot);
+    double angle = G::norm(- bneighbor + bpivot);
 
     if (angle < angleMin) {
       angleMin = angle;

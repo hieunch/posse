@@ -18,6 +18,7 @@ protected:
     void fromMacLayer(cPacket *, int, double, double);
 
 private:
+    static vector<BoundaryNode> hole1;
     double broadcastFactor;
     double scaleFactorCave;
     double scaleFactorConvex;
@@ -27,6 +28,7 @@ private:
     void recvHCI(BoundHolePacket *p);
     bool canBroadcast();
 
+    void handleRemoveNodeMessage(cMessage *);
     // routing - handling data packet
     void sendData(ICHDataPacket*);
     void recvData(ICHDataPacket*);

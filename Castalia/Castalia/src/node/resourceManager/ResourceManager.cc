@@ -14,6 +14,8 @@
 
 Define_Module(ResourceManager);
 
+int ResourceManager::numDead = 0;
+
 void ResourceManager::initialize()
 {
 	sigmaCPUClockDrift = par("sigmaCPUClockDrift");
@@ -31,7 +33,7 @@ void ResourceManager::initialize()
 	if (cpuClockDrift < -3 * sigmaCPUClockDrift)
 		cpuClockDrift = -3 * sigmaCPUClockDrift;
 
-	initialEnergy = par("initialEnergy");
+	initialEnergy = 18;//par("initialEnergy");
 	ramSize = par("ramSize");
 	baselineNodePower = par("baselineNodePower");
 	periodicEnergyCalculationInterval = (double)par("periodicEnergyCalculationInterval") / 1000;
@@ -130,7 +132,7 @@ void ResourceManager::finishSpecific()
 
 double ResourceManager::estimateLifetime(void) 
 {
-	return ((initialEnergy * simTime().dbl()) / ((initialEnergy - remainingEnergy) * 86400.0));
+	return ((initialEnergy * simTime().dbl()) / ((initialEnergy - remainingEnergy)));// * 86400.0));
 }
 
 double ResourceManager::getSpentEnergy(void)
@@ -160,6 +162,15 @@ void ResourceManager::consumeEnergy(double amount)
         declareOutput("Dead Node");
 		collectOutput("Dead Node", "yes?", 1);
 		collectOutput("Dead Node", "time", SIMTIME_DBL(simTime()));
+
+		trace1() << "OUT_OF_ENERGY";
+		if (++numDead == 50) {
+			trace1() << "LIFETIME";
+			trace1() << "BI " << GlobalLocationService::getBalancingIndex();
+			trace1() << "STRETCH " << GlobalLocationService::getStretch();
+			endSimulation();
+		}
+		
 	} else
 		remainingEnergy -= amount;
 }

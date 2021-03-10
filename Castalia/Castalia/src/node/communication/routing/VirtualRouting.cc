@@ -13,6 +13,7 @@
 #include "VirtualRouting.h"
 
 bool VirtualRouting::initialized = false;
+vector<Point> VirtualRouting::hole0;
 void VirtualRouting::initialize()
 {
   GlobalLocationService::initialize(getParentModule()->getParentModule()->getParentModule());
@@ -49,6 +50,8 @@ void VirtualRouting::initialize()
 	disabled = true;
 	currentSequenceNumber = 0;
 
+	setTimer(TRACE_ENERGY, 10);
+
 	declareOutput("Buffer overflow");
 }
 
@@ -71,9 +74,9 @@ void VirtualRouting::toMacLayer(cPacket * pkt, int destination)
 	Point nextHopLocation = GlobalLocationService::getLocation(destination);
 	// for (int i=0; i<10; i++) trace() << "OK2";
 	double distance = G::distance(selfLocation, nextHopLocation);
-	double powerNeeded = 3 * 3600* (50e-8 * byteLength * 8 + 100e-12 * byteLength * 8 * distance * distance);
-	trace() << "byteLength " << byteLength << " powerNeeded " << powerNeeded;
-	resMgrModule->consumeEnergy(powerNeeded);
+	double powerNeeded = 3 * 1* (50e-8 * byteLength * 8 + 100e-12 * byteLength * 8 * distance * distance);
+	// trace() << "byteLength " << byteLength << " powerNeeded " << powerNeeded;
+	if (!isPaused && netPacket->getIsDataPacket()) resMgrModule->consumeEnergy(powerNeeded);
 	// --------------
 
 	netPacket->getNetMacInfoExchange().nextHop = destination;
@@ -174,14 +177,14 @@ void VirtualRouting::handleMessage(cMessage * msg)
 			 * This will not delete the encapsulated APP packet if it gets decapsulated
 			 * by fromMacLayer(), i.e., the normal/expected action.
 			 */
-			numPacketReceived++;
-			GlobalLocationService::increaseNumReceived(self);
+			if (netPacket->getIsDataPacket()) numPacketReceived++;
+			if (netPacket->getIsDataPacket()) GlobalLocationService::increaseNumReceived(self);
       // energy ---------
       double byteLength = netPacket->getByteLength();
       Point nextHopLocation = GlobalLocationService::getLocation(info.lastHop);
       double distance = G::distance(selfLocation, nextHopLocation);
-      double powerNeeded = 3 * 3600*(50e-8 * byteLength * 8);
-      resMgrModule->consumeEnergy(powerNeeded);
+      double powerNeeded = 3 * 1*(50e-8 * byteLength * 8);
+      if (!isPaused && netPacket->getIsDataPacket()) resMgrModule->consumeEnergy(powerNeeded);
       // --------------
 
 
@@ -202,6 +205,7 @@ void VirtualRouting::handleMessage(cMessage * msg)
           double ratio = hopCount / GlobalLocationService::numHopShortestPath(s, d);
 		  trace() << "hop ratio " << ratio << " " << hopCount << " " << GlobalLocationService::numHopShortestPath(s, d);
           sumRatioEndCount += ratio;
+		  if (netPacket->getIsDataPacket()) GlobalLocationService::increaseSumRatio(self, ratio);
 		  maxRatio = max(maxRatio, ratio);
 		//   sumDistanceEndCount += distanceCount;
           endCount++;
@@ -246,10 +250,9 @@ void VirtualRouting::handleMessage(cMessage * msg)
 			disabled = true;
 			for (int i=0; i<5; i++) trace1() << "OUT_OF_ENERGY";
 			deathTime = SIMTIME_DBL(simTime());
-			isPaused = true;
+			// isPaused = true;
 			GlobalLocationService::removeNode(self);
 			for (int i=0; i<5; i++) trace1() << "removed";
-			setTimer(RESUME_APPLICATION, 10);
 
 			for (int i=0; i<GlobalLocationService::numNodes; i++) {
 				if (i == self) continue;
@@ -260,13 +263,9 @@ void VirtualRouting::handleMessage(cMessage * msg)
 			break;
 		}
 
-		case RESUME_APPLICATION:{
-			isPaused = false;
-			break;
-		}
-
 		case REMOVE_NODE:{
-			if (!disabled) handleRemoveNodeMessage(msg);
+			neighborTable = GlobalLocationService::getNeighborTable(self);
+			handleRemoveNodeMessage(msg);
 			break;
 		}
 
@@ -300,7 +299,8 @@ void VirtualRouting::finish()
 //  if (self == 801 || self == 0)
 //    log() << resMgrModule->getSpentEnergy() << " days " << self;
 
-  trace1() << "WSN_EVENT STATISTICS " << "id:" << self << " totalPacketReceived:" << numPacketReceived << " "
+	// if (deathTime == 10000) deathTime = resMgrModule->estimateLifetime();
+  trace() << "WSN_EVENT STATISTICS " << "id:" << self << " totalPacketReceived:" << numPacketReceived << " "
     << "estimateLifetime:" << deathTime << " x:" << selfLocation.x() << " y:" << selfLocation.y()
     << " sumHopRatio:" << sumRatioEndCount << " maxRatio:" << maxRatio << " sumDistanceRatio:" << sumDistanceEndCount << " endPointCount:" << endCount
     << " energyConsumed:" << resMgrModule->getSpentEnergy();

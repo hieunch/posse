@@ -41,6 +41,7 @@ using namespace std;
 class VirtualRouting: public CastaliaModule, public TimerService {
  protected:
   static bool initialized;
+  static vector<Point> hole0;
 	/*--- The .ned file's parameters ---*/
 	int maxNetFrameSize;		//in bytes
 	int netDataFrameOverhead;	//in bytes

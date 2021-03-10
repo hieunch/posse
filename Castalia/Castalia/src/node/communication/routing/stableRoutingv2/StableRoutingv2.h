@@ -54,6 +54,7 @@ class StableRoutingv2: public VirtualRouting {
     void fromApplicationLayer(cPacket *, const char *);
     void fromMacLayer(cPacket *, int, double, double);
     void handleNetworkControlCommand(cMessage *);
+    void handleRemoveNodeMessage(cMessage *);
     void sendTopologySetupPacket();
     void timerFiredCallback(int);
     void processBufferedPacket();

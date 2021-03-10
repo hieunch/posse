@@ -8,12 +8,24 @@ using namespace std;
 
 Define_Module(ICH);
 
+vector<BoundaryNode> ICH::hole1;
+
 void ICH::startup() {
     broadcastFactor = 10;//par("broadcastFactor");
     scaleFactorCave = par("scaleFactorCave");
     scaleFactorConvex = par("scaleFactorConvex");
     srand (time(NULL));
     BoundHole::startup();
+}
+
+void ICH::handleRemoveNodeMessage(cMessage *msg) {
+//   hole.clear();
+//   hole1.clear();
+    // DGraph::clearCache();
+    // sortNeighbor();
+    // findStuckAngle();
+    // setTimer(START_BOUND_HOLE, 0);
+//   BoundHole::startup();
 }
 
 void ICH::fromApplicationLayer(cPacket * pkt, const char *destination){
@@ -35,16 +47,18 @@ void ICH::fromApplicationLayer(cPacket * pkt, const char *destination){
     dataPacket->setPacketId(countDataPkt++);
     dataPacket->setScaleFactor(1);
     dataPacket->setApIndex(0);
+    dataPacket->setIsDataPacket(true);
 
     sendData(dataPacket);
 }
 
 void ICH::fromMacLayer(cPacket * pkt, int macAddress, double rssi, double lqi){
+
     ICHDataPacket *netPacket = dynamic_cast <ICHDataPacket*>(pkt);
     if (netPacket) {
         recvData(netPacket);
     } else {
-        numPacketReceived--;
+        // numPacketReceived--;
         if (strcmp(pkt->getName(), "BroadcastHCI") == 0) {
             auto bh_pkt = static_cast<BoundHolePacket*>(pkt);
             recvHCI(bh_pkt);
@@ -98,6 +112,7 @@ void ICH::recvHCI(BoundHolePacket *p) {
         hole.push_back(*n);
     }
     hole.pop_back();
+    // if (hole1.empty()) hole1 = hole;
     bool b = canBroadcast();
     if (!b) {
         trace() << "OutsideBroadcastRegion " << self;
@@ -789,6 +804,7 @@ Point ICH::findHomotheticCenter(vector<Point> v, double sign) {
 }
 
 void ICH::recvData(ICHDataPacket *pkt) {
+    // if (isPaused || hole1.empty()) return;
     string dst(pkt->getDestination());
     string src(pkt->getSource());
 

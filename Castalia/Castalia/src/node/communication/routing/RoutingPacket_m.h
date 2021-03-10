@@ -40,6 +40,7 @@ void doUnpacking(cCommBuffer *b, NetMacInfoExchange_type& a);
  *     int TTL = 10000;
  *     int hopCount = 0;
  *     double distanceCount = 0;
+ *     bool isDataPacket = false;
  *     string source;
  *     string destination;
  *     unsigned int sequenceNumber;
@@ -53,6 +54,7 @@ class RoutingPacket : public ::cPacket
     int TTL_var;
     int hopCount_var;
     double distanceCount_var;
+    bool isDataPacket_var;
     opp_string source_var;
     opp_string destination_var;
     unsigned int sequenceNumber_var;
@@ -83,6 +85,8 @@ class RoutingPacket : public ::cPacket
     virtual void setHopCount(int hopCount);
     virtual double getDistanceCount() const;
     virtual void setDistanceCount(double distanceCount);
+    virtual bool getIsDataPacket() const;
+    virtual void setIsDataPacket(bool isDataPacket);
     virtual const char * getSource() const;
     virtual void setSource(const char * source);
     virtual const char * getDestination() const;

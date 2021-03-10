@@ -41,6 +41,7 @@ void RainbowRouting::fromApplicationLayer(cPacket * pkt, const char *destination
 
   dataPacket->setDestLocation(GlobalLocationService::getLocation(atoi(destination)));
   dataPacket->setPacketId(nextId++);
+  dataPacket->setIsDataPacket(true);
 
   int nextHop = getNextHopGreedy(dataPacket);
   if (nextHop != -1) {
