@@ -297,7 +297,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
       tie(path, outCavernRadius, aroundHoleRadius, inCavernRadius) = findPath(selfLocation,
         destLocation, hole, caverns);
       findPathCache[make_tuple(selfLocation, destLocation, outCavernRadius, aroundHoleRadius, inCavernRadius)] = path;
-      debugPath(path, "red");
+      // debugPath(path, "red");
       pkt->setOutCavernRadius(outCavernRadius);
       pkt->setAroundHoleRadius(aroundHoleRadius);
       pkt->setInCavernRadius(inCavernRadius);
@@ -321,7 +321,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           }
         }
         if (nextHop != -1) {
-          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          // debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
 
@@ -353,7 +353,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            // debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -402,7 +402,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           }
         }
         if (nextHop != -1) {
-          debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+          // debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
           toMacLayer(pkt, nextHop);
         } else {
           pkt->setRoutingMode(ROLLINGBALL_ROUTING);
@@ -432,7 +432,7 @@ void StableRouting::processDataPacket(StablePacket* pkt){
           Point ballCenter = pkt->getBallCenter();
           nextHop = G::findNextHopRollingBall(selfLocation, ballCenter, RADIO_RANGE / 2, neighborTable, nextCenter);
           if (nextHop != -1) {
-            debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
+            // debugLine(selfLocation, GlobalLocationService::getLocation(nextHop), "black");
             toMacLayer(pkt, nextHop);
           }
         }
@@ -469,11 +469,15 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
     return outCavernCache[make_tuple(cavernHash, from, to, ballRadius)];
   }
 
-  vector<Point> interiorCavern = G::rollBallCavern(cavern, ballRadius);
+  // vector<Point> interiorCavern = G::rollBallCavern(cavern, ballRadius);
   vector<Point> shortestPath = G::shortestPathOutOrOnPolygon(hole, from, to);
 
+  double maxRadius = G::distance(cavern[0], cavern[cavern.size() - 1]) / 4;
+  vector<Point> interiorCavern = G::rollBallCavern2(cavern, ballRadius, maxRadius, shortestPath);
+
   // gate
-  Point M = cavern[0], N = cavern[cavern.size() - 1];
+  // Point M = cavern[0], N = cavern[cavern.size() - 1];
+  Point M = interiorCavern[0], N = interiorCavern[interiorCavern.size() - 1];
   Point I;
   LineSegment MN(M, N);
   for (int i = 0; i < shortestPath.size() - 1; i++) {
@@ -485,10 +489,28 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
     }
   }
 
+  if (I.isUnspecified()) {
+    Point A = interiorCavern[0];
+    double distA = DBL_MAX;
+    for (int i = 0; i < shortestPath.size() - 1; i++) {
+      double dist = G::distanceToLineSegment(shortestPath[i], shortestPath[i-1], A);
+      if (dist < distA) distA = dist;
+    }
+
+    Point B = interiorCavern[interiorCavern.size()-1];
+    double distB = DBL_MAX;
+    for (int i = 0; i < shortestPath.size() - 1; i++) {
+      double dist = G::distanceToLineSegment(shortestPath[i], shortestPath[i-1], B);
+      if (dist < distB) distB = dist;
+    }
+
+    I = distA < distB ? A : B;
+  }
+
   if (I.isUnspecified()) return vector<Point>(); // not gonna happen
   vector<Point> result;
 
-  Point T = I + Vector(M, N).rotate(M_PI / 2) * (ballRadius / Vector(M, N).length());
+  Point T = I;// + Vector(M, N).rotate(M_PI / 2) * (ballRadius / Vector(M, N).length());
   if (!G::pointInOrOnPolygon(interiorCavern, from)) {
     double minDistance = INT_MAX;
     Point closest = G::closestPointOnPolygon(interiorCavern, from);
@@ -499,8 +521,13 @@ vector<Point> StableRouting::findPathOutCavern(Point from, Point to, vector<Poin
 
     from = closest;
   }
+  // debugPoint(from, "black");
 
+  for (int i=0; i<10; i++) {
+    trace() << "shortestPathInOrOnPolygon";
+  }
   vector<Point> spInterior = G::shortestPathInOrOnPolygon(interiorCavern, from, T);
+  debugPath(spInterior, "red");
   debugPath(spInterior, "red");
 
   for (auto p: spInterior) result.push_back(p);
@@ -594,7 +621,7 @@ tuple<vector<Point>, double, double, double> StableRouting::findPath(Point from,
   vector<Point> inCavern = {};
   Point newFrom = from, newTo = to;
 
-  int pathNum = getRandomNumber(1, NUM_PATH);
+  int pathNum = NUM_PATH/4;// getRandomNumber(1, NUM_PATH);
 
   for (auto cavern: caverns) {
     if (G::pointInOrOnPolygon(cavern, from)) {
