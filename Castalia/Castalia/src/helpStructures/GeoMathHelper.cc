@@ -346,8 +346,9 @@ std::vector<Point> G::shortestPathInOrOnPolygon(std::vector<Point> vs, Point sou
     if (id == V - 1) break;
 
     for (int i = 0; i < V; i++) {
-      // if (i != id && inOrOnPolygon(vs, LineSegment(points[id], points[i]))) {
-      if (i != id) {
+      // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "check inOrOnPolygon";
+      if (i != id && inOrOnPolygon(vs, LineSegment(points[id], points[i]))) {
+      // if (i != id) {
         if (d[id] + distance(points[id], points[i]) < d[i]) {
           auto it = st.find({d[i], i});
           if (it != st.end()) st.erase(it);
@@ -357,17 +358,24 @@ std::vector<Point> G::shortestPathInOrOnPolygon(std::vector<Point> vs, Point sou
           trace[i] = id;
         }
       }
+      // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "inOrOnPolygon OK";
     }
   }
 
+  // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "End while";
   std::vector<Point> result;
   int current = V - 1;
   while (current != -1) {
+    // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "current " << current << " points_size " << points.size();
     result.push_back(points[current]);
+    // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "current " << current << " trace_size " << (sizeof(trace)/sizeof(*trace));
     current = trace[current];
+    // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "current " << current << " trace " << trace[current];
   }
+  // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "End traceback, result_size = " << result.size();
 
   reverse(result.begin(), result.end());
+  // for (int j=0; j<10; j++) DebugInfoWriter::getStream() << endl << "End reverse";
 
   return result;
 }
@@ -1188,6 +1196,203 @@ std::vector<Point> G::rollBallCavern(std::vector<Point> points, double r) {
 //  debugCircle(trajectory[0], r, "green");
   return trajectory;
 }
+
+std::vector<Point> G::rollBallCavern2(std::vector<Point> points, double r0, double r_max, std::vector<Point> path) {
+//  debugPath(points, "red");
+  debugPath(path, "black");
+  std::vector<Either> parts;
+  double r = r0;
+  DebugInfoWriter::getStream() << endl << "radius " << r << " r_max " << r_max;
+
+  // MN is the gate
+  Vector MN(points[0], points[points.size() - 1]);
+  Point X1 = points[0] + MN.rotate(M_PI / 2) * (r / MN.length());
+
+//  debugCircle(X1, r, "black");
+//  debugPoint(X1, "black");
+  // debugPoint(X1, "blue");
+  // Point X2 = points[0] + MN.rotate(- M_PI / 2) * (r / MN.length());
+  // parts.push_back(Either(DirectedArc(X1, X2, points[0], r)));
+  // debugPoint(X2, "red");
+
+  for (int i = 0; i < points.size() - 1; i++) {
+    Point A = points[i];
+    int j0 = 0;
+    double minDist = DBL_MAX;
+    for (int j=0; j<path.size()-1; j++) {
+      double d = distanceToLineSegment(LineSegment(path[j], path[j+1]), A);
+      if (d < minDist) {
+        minDist = d;
+        j0 = j;
+      }
+    }
+    double varAngle = angle(path[j0], path[j0+1], path[j0], A);
+
+    // debugLine(A, path[j0], "blue");
+
+    string fileName = "GeoMathHelperTrace.txt";
+    DebugInfoWriter::getStream() << endl << "A(" << A.x() << "," << A.y() << ") " << "J(" << path[j0].x() << "," << path[j0].y() << ") "  << "J1(" << path[j0+1].x() << "," << path[j0+1].y() << ") " << varAngle;
+
+    if (minDist > EPSILON) {
+      if (varAngle < M_PI) {
+        r = r_max - r0;
+        debugPoint(A, "blue");
+      }
+      else {
+        r = r0;
+        debugPoint(A, "red");
+      }
+    }
+
+    Point B = points[i + 1];
+    Vector AB(A, B);
+    Point A1 = A + AB.rotate(M_PI / 2) * (r / AB.length());
+    Point B1 = B + AB.rotate(M_PI / 2) * (r / AB.length());
+    DirectedSegment A1B1(A1, B1);
+    parts.push_back(Either(A1B1));
+    // debugLine(A1, B1, "black");
+
+    Point B2 = B + AB.rotate(-M_PI / 2) * (r / AB.length());
+    DirectedArc B1B2(B1, B2, B, r);
+    parts.push_back(Either(B1B2));
+    debugCircle(B, r, "blue");
+  }
+
+  DirectedSegment currentSegment = parts[2].directedSegment;
+  DirectedArc otherArc = parts[1].directedArc;
+
+  std::vector<Point> trajectory;
+  trajectory.push_back(parts[0].from());
+  Either current = parts[0];
+  int currentId = 0;
+  int nextId = 0;
+  while (currentId < parts.size()) {
+    Either next;
+    bool foundNext = false;
+    double minDistance = 1e9;
+
+    if (current.isSegment) {
+      DirectedSegment currentSegment = current.directedSegment;
+      for (int i = currentId + 1; i < parts.size(); i++) {
+        Either other = parts[i];
+        if (other.isSegment) {
+          DirectedSegment otherSegment = other.directedSegment;
+          LineSegment ab(currentSegment.from, currentSegment.to),
+                      xy(otherSegment.from, otherSegment.to);
+          if (G::doIntersect(ab, xy)) {
+            foundNext = true;
+            Point M;
+            if (currentSegment.to == otherSegment.from) {
+              M = currentSegment.to;
+            } else {
+              M = G::intersection(ab, xy);
+            }
+
+            if (G::distance(currentSegment.from, M) < minDistance) {
+              minDistance = G::distance(currentSegment.from, M);
+              next = Either(DirectedSegment(M, otherSegment.to));
+              nextId = i;
+            }
+          }
+        } else if (other.isArc) {
+          DirectedArc otherArc = other.directedArc;
+          Point intersection;
+          if (G::is_intersect(currentSegment, otherArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentSegment.from, intersection) < minDistance) {
+              minDistance = G::distance(currentSegment.from, intersection);
+              next = Either(DirectedArc(intersection, otherArc.to, otherArc.center, otherArc.radius));
+              nextId = i;
+            }
+          }
+        }
+      }
+
+//      if (foundNext)
+//        debugLine(current.from(), next.from(), "green");
+    } else {
+      DirectedArc currentArc = current.directedArc;
+      for (int i = currentId + 1; i < parts.size(); i++) {
+        Either other = parts[i];
+        if (other.isSegment) {
+          DirectedSegment otherSegment = other.directedSegment;
+          Point intersection;
+          if (G::is_intersect(otherSegment, currentArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentArc.from, intersection) < minDistance) {
+              minDistance = G::distance(currentArc.from, intersection);
+              next = Either(DirectedSegment(intersection, otherSegment.to));
+              nextId = i;
+            }
+          }
+        } else if (other.isArc) {
+          DirectedArc otherArc = other.directedArc;
+          Point intersection;
+          if (G::is_intersect(currentArc, otherArc, intersection)) {
+            foundNext = true;
+            if (G::distance(currentArc.from, intersection) < minDistance) {
+              minDistance = G::distance(currentArc.from, intersection);
+              next = Either(DirectedArc(intersection, otherArc.to, otherArc.center, otherArc.radius));
+              nextId = i;
+            }
+          }
+
+        }
+      }
+//      if (foundNext)
+//        debugArc(current.from(), next.from(), r, "green");
+    }
+    if (!foundNext) break;
+
+    trajectory.push_back(next.from());
+    current = next;
+    currentId = nextId;
+  }
+  Point J = points[points.size() - 1] + MN.rotate(M_PI / 2) * (r / MN.length());
+  for (int i = 1; i < trajectory.size()-1; i++) {
+    DirectedSegment currentSegment(J, trajectory[0]);
+    DirectedSegment otherSegment(trajectory[i], trajectory[i+1]);
+    LineSegment ab(currentSegment.from, currentSegment.to),
+                xy(otherSegment.from, otherSegment.to);
+    if (G::doIntersect(ab, xy)) {
+      Point M;
+      if (currentSegment.to == otherSegment.from) {
+        M = currentSegment.to;
+      } else {
+        M = G::intersection(ab, xy);
+      }
+      for (int j=0; j<i; j++) {
+        debugPoint(trajectory[j], "black");
+      }
+      debugPoint(M, "green");
+      if (i > 0) trajectory.erase(trajectory.begin(), trajectory.begin()+i-1);
+      trajectory[0] = M;
+      i = 0;
+    }
+  }
+//  debugPoint(J, "black");
+//  debugCircle(J, r, "black");
+//  debugArc(trajectory[trajectory.size() - 1], J, r, "green");
+  trajectory.push_back(J);
+ debugPolygon(trajectory, "green");
+ debugPolygon(trajectory, "green");
+ debugPolygon(trajectory, "green");
+
+//  for (auto p: trajectory) {
+//    int random = rand() % 15;
+//    if (random <= 1) {
+//      debugPoint(p, "black");
+//      debugCircle(p, r, "black");
+//    }
+////    debugPoint(p, "green");
+//  }
+
+//  debugCircle(trajectory[0], r, "green");
+  return trajectory;
+}
+
+
+
 std::vector<Point> G::rollBallPolygon(std::vector<Point> points, double r) {
 
   std::vector<Either> parts;

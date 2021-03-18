@@ -524,6 +524,7 @@ class G {
     static Point rotatePoint(Point, Point, double angle);
     static bool distanceEqual(Point, Point, double);
     static std::vector<Point> rollBallCavern(std::vector<Point>, double);
+    static std::vector<Point> rollBallCavern2(std::vector<Point>, double, double, std::vector<Point>);
     static std::vector<Point> rollBallPolygon(std::vector<Point>, double);
     static void debugLine(double, double, double, double, string color);
     static void debugLine(Point, Point, string color);
